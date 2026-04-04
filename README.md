@@ -1,50 +1,132 @@
-# Welcome to your Expo app 👋
+# Recurly
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Recurly** is a subscription management app built with React Native. Track renewals, spending, and plans in one place—on iOS, Android, and web.
 
-## Get started
+---
 
-1. Install dependencies
+## Stack
 
-   ```bash
-   npm install
-   ```
+| Layer | Technology |
+|--------|------------|
+| **Framework** | [Expo](https://expo.dev) SDK 54 · [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing) |
+| **UI** | [React Native](https://reactnative.dev) 0.81 · [React](https://react.dev) 19 |
+| **Styling** | [NativeWind](https://www.nativewind.dev) v5 (preview) · [Tailwind CSS](https://tailwindcss.com) v4 · `global.css` · [react-native-css](https://github.com/nativewind/react-native-css) |
+| **Language & quality** | TypeScript · ESLint (`eslint-config-expo`) |
+| **Navigation UX** | React Navigation · `react-native-screens` · `react-native-safe-area-context` · Reanimated · Gesture Handler |
 
-2. Start the app
+### Development
 
-   ```bash
-   npx expo start
-   ```
+- **Expo CLI / dev server** — `npx expo start` (Expo Go, simulators, or [development builds](https://docs.expo.dev/develop/development-builds/introduction/))
+- **Metro** — bundler (configured with NativeWind)
 
-In the output, you'll find options to open the app in a
+### Integrations (roadmap)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **[Clerk](https://clerk.com)** — authentication and user management; billing flows where applicable
+- **[PostHog](https://posthog.com)** — product analytics and feature flags
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Delivery & collaboration
 
-## Get a fresh project
+- **[EAS](https://docs.expo.dev/eas/)** (Expo Application Services) — cloud builds, updates, and app store submission (`eas build`, `eas submit`)
+- **[CodeRabbit](https://coderabbit.ai)** — AI-assisted pull request reviews (enable the GitHub app on this repository)
 
-When you're ready, run:
+---
+
+## Requirements
+
+- Node.js (LTS recommended)
+- [npm](https://www.npmjs.com/) or your preferred package manager
+- For device builds: Xcode (iOS), Android Studio (Android), and an [Expo](https://expo.dev) account for EAS when you wire it up
+
+---
+
+## Getting started
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then open the project in Expo Go, an emulator/simulator, or a development build.
 
-## Learn more
+Common scripts:
 
-To learn more about developing your project with Expo, look at the following resources:
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start the Metro bundler |
+| `npm run android` | Start on Android |
+| `npm run ios` | Start on iOS |
+| `npm run web` | Start for web |
+| `npm run lint` | Run ESLint |
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## Project layout
 
-Join our community of developers creating universal apps.
+- `app/` — Expo Router routes (`(tabs)`, `(auth)`, etc.)
+- `global.css` — theme tokens and shared styles (Tailwind / NativeWind)
+- `assets/` — images and static assets
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## Git branches, releases, and versioning
+
+We use **environment-aligned long-lived branches** and **Semantic Versioning** ([SemVer](https://semver.org/)).
+
+| Branch | Purpose |
+|--------|---------|
+| **`dev`** | Day-to-day integration. Feature branches merge here via PR. **Default branch for active development.** |
+| **`qa`** | QA / staging. Updated when `dev` is stable enough for a test build (merge or promote from `dev`). |
+| **`prod`** | Production. Only merges from `qa` after sign-off. Matches what ships to stores. |
+| **`main`** | Kept in sync with **`prod`** (or latest stable) so clones without checking `prod` still see release history. |
+
+**Version numbers** (in `package.json`, `app.json` / `expo.version` when you wire EAS, and root `VERSION`):
+
+- **`MAJOR.MINOR.PATCH`** (e.g. `1.4.2`) — bump **PATCH** for fixes, **MINOR** for backward-compatible features, **MAJOR** for breaking changes.
+- **Pre-release** (optional on `dev` / `qa`): `1.0.0-rc.1`, `1.0.0-beta.2`.
+
+**Git tags** (on `prod` after each store release):
+
+- `v1.0.0`, `v1.1.0`, … — always match the version you released.
+
+**Feature branch names** (merge → `dev`):
+
+- `feature/short-description` — new capability  
+- `fix/issue-or-scope` — bugfix  
+- `chore/task` — tooling, deps, docs only  
+
+**Typical flow**
+
+```text
+feature/* → PR → dev → (promote) → qa → (promote) → prod → tag vX.Y.Z
+```
+
+Set GitHub’s **default branch** to **`dev`** while the team is building; switch default to **`main`** or **`prod`** later if you prefer release-first discovery.
+
+---
+
+## Suggested GitHub topics
+
+You can paste these into the repository **Topics** field on GitHub:
+
+`expo` · `react-native` · `expo-router` · `nativewind` · `tailwindcss` · `typescript` · `subscription-management` · `mobile` · `clerk` · `posthog` · `eas` · `react-native-reanimated`
+
+---
+
+## Repository
+
+```text
+git@github.com:ShashankBejjanki1241/react-native-recurly.git
+```
+
+Clone:
+
+```bash
+git clone git@github.com:ShashankBejjanki1241/react-native-recurly.git
+cd react-native-recurly
+```
+
+---
+
+## License
+
+Private project unless otherwise noted.

@@ -6,13 +6,13 @@
 
 ## Stack
 
-| Layer | Technology |
-|--------|------------|
-| **Framework** | [Expo](https://expo.dev) SDK 54 · [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing) |
-| **UI** | [React Native](https://reactnative.dev) 0.81 · [React](https://react.dev) 19 |
-| **Styling** | [NativeWind](https://www.nativewind.dev) v5 (preview) · [Tailwind CSS](https://tailwindcss.com) v4 · `global.css` · [react-native-css](https://github.com/nativewind/react-native-css) |
-| **Language & quality** | TypeScript · ESLint (`eslint-config-expo`) |
-| **Navigation UX** | React Navigation · `react-native-screens` · `react-native-safe-area-context` · Reanimated · Gesture Handler |
+| Layer                  | Technology                                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**          | [Expo](https://expo.dev) SDK 54 · [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing)                                                                       |
+| **UI**                 | [React Native](https://reactnative.dev) 0.81 · [React](https://react.dev) 19                                                                                                           |
+| **Styling**            | [NativeWind](https://www.nativewind.dev) v5 (preview) · [Tailwind CSS](https://tailwindcss.com) v4 · `global.css` · [react-native-css](https://github.com/nativewind/react-native-css) |
+| **Language & quality** | TypeScript · ESLint (`eslint-config-expo`)                                                                                                                                             |
+| **Navigation UX**      | React Navigation · `react-native-screens` · `react-native-safe-area-context` · Reanimated · Gesture Handler                                                                            |
 
 ### Development
 
@@ -33,7 +33,7 @@
 
 ## Requirements
 
-- Node.js (LTS recommended)
+- **Node.js `>= 20.19.4`** — React Native 0.81 and Metro declare this minimum. If you see `npm warn EBADENGINE` (e.g. current `v20.19.3`), upgrade Node (patch bump is enough). With [nvm](https://github.com/nvm-sh/nvm): `nvm install` / `nvm use` (see root `.nvmrc`).
 - [npm](https://www.npmjs.com/) or your preferred package manager
 - For device builds: Xcode (iOS), Android Studio (Android), and an [Expo](https://expo.dev) account for EAS when you wire it up
 
@@ -50,13 +50,13 @@ Then open the project in Expo Go, an emulator/simulator, or a development build.
 
 Common scripts:
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Start the Metro bundler |
-| `npm run android` | Start on Android |
-| `npm run ios` | Start on iOS |
-| `npm run web` | Start for web |
-| `npm run lint` | Run ESLint |
+| Command           | Description             |
+| ----------------- | ----------------------- |
+| `npm start`       | Start the Metro bundler |
+| `npm run android` | Start on Android        |
+| `npm run ios`     | Start on iOS            |
+| `npm run web`     | Start for web           |
+| `npm run lint`    | Run ESLint              |
 
 ---
 
@@ -72,11 +72,11 @@ Common scripts:
 
 We use **environment-aligned long-lived branches** and **Semantic Versioning** ([SemVer](https://semver.org/)).
 
-| Branch | Purpose |
-|--------|---------|
-| **`dev`** | Day-to-day integration. Feature branches merge here via PR. **Default branch for active development.** |
-| **`qa`** | QA / staging. Updated when `dev` is stable enough for a test build (merge or promote from `dev`). |
-| **`prod`** | Production. Only merges from `qa` after sign-off. Matches what ships to stores. |
+| Branch     | Purpose                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| **`dev`**  | Day-to-day integration. Feature branches merge here via PR. **Default branch for active development.**       |
+| **`qa`**   | QA / staging. Updated when `dev` is stable enough for a test build (merge or promote from `dev`).            |
+| **`prod`** | Production. Only merges from `qa` after sign-off. Matches what ships to stores.                              |
 | **`main`** | Kept in sync with **`prod`** (or latest stable) so clones without checking `prod` still see release history. |
 
 **Version numbers** (in `package.json`, `app.json` / `expo.version` when you wire EAS, and root `VERSION`):
@@ -90,9 +90,9 @@ We use **environment-aligned long-lived branches** and **Semantic Versioning** (
 
 **Feature branch names** (merge → `dev`):
 
-- `feature/short-description` — new capability  
-- `fix/issue-or-scope` — bugfix  
-- `chore/task` — tooling, deps, docs only  
+- `feature/short-description` — new capability
+- `fix/issue-or-scope` — bugfix
+- `chore/task` — tooling, deps, docs only
 
 **Typical flow**
 

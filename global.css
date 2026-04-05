@@ -65,24 +65,35 @@
     @apply size-6;
   }
 
-  .home-header {
-    @apply mb-2.5 flex-row items-center justify-between;
+  /* Home tab: wraps header (and top-of-screen block spacing) from the main list. */
+  .home {
+    @apply w-full;
   }
 
+  .home-header {
+    @apply mb-2.5 flex-row items-center justify-between gap-3;
+  }
+
+  /* Profile icon + HOME_USER.name in a row; gap matches theme tab horizontalInset (20px). */
   .home-user {
-    @apply flex-row items-center;
+    @apply min-w-0 flex-1 flex-row items-center gap-5;
   }
 
   .home-avatar {
-    @apply size-16 rounded-full;
+    @apply size-16 shrink-0 rounded-full;
   }
 
   .home-user-name {
-    @apply ml-4 text-2xl font-sans-bold text-primary;
+    @apply min-w-0 flex-1 text-2xl font-sans-bold leading-snug tracking-tight text-primary;
   }
 
+  /* icons.add from @/constants/icons */
   .home-add-icon {
-    @apply size-12;
+    @apply size-12 shrink-0;
+  }
+
+  .home-add-hit {
+    @apply shrink-0 items-center justify-center rounded-full active:opacity-70;
   }
 
   .home-balance-card {
@@ -98,11 +109,19 @@
   }
 
   .home-balance-amount {
-    @apply text-4xl font-sans-extrabold text-white;
+    @apply text-4xl font-sans-extrabold leading-none text-white;
   }
 
   .home-balance-date {
     @apply text-xl font-sans-medium text-white;
+  }
+
+  .home-balance-renewal {
+    @apply items-end;
+  }
+
+  .home-balance-renewal-label {
+    @apply text-sm font-sans-semibold text-white/75;
   }
 
   .list-head {
@@ -114,19 +133,24 @@
   }
 
   .list-action {
-    @apply rounded-full border border-black/20 px-4 py-1;
+    @apply min-h-11 min-w-[44px] flex-row items-center justify-center rounded-full border border-black/20 px-4 py-2 active:opacity-60;
   }
 
   .list-action-text {
-    @apply text-lg font-sans-semibold text-primary;
+    @apply text-base font-sans-semibold text-primary leading-none;
   }
 
+  /* Fixed width + padding: stable cross-platform row; room for icon + single-line price. */
   .upcoming-card {
-    @apply mr-4 w-44 rounded-2xl border border-black/10 bg-background p-4;
+    @apply mr-4 w-48 shrink-0 flex-col rounded-2xl border border-black/10 bg-card p-3.5 shadow-sm shadow-black/5;
   }
 
   .upcoming-row {
-    @apply flex-row items-center gap-3;
+    @apply w-full flex-row flex-nowrap items-center gap-3;
+  }
+
+  .upcoming-copy {
+    @apply min-w-0 flex-1 flex-col gap-1;
   }
 
   .upcoming-icon {
@@ -134,23 +158,28 @@
   }
 
   .upcoming-price {
-    @apply text-lg font-sans-bold text-primary;
+    @apply self-start text-lg font-sans-bold leading-none text-primary;
   }
 
   .upcoming-meta {
-    @apply text-sm font-sans-semibold text-muted-foreground;
+    @apply text-sm font-sans-semibold leading-tight text-muted-foreground;
   }
 
   .upcoming-name {
-    @apply mt-2 text-lg font-sans-bold text-primary;
+    @apply mt-2.5 w-full text-lg font-sans-bold leading-snug text-primary;
+  }
+
+  .upcoming-empty-state {
+    @apply mb-2 py-1 text-sm font-sans-medium text-muted-foreground;
   }
 
   .sub-card {
     @apply rounded-2xl border border-border p-4;
   }
 
+  /* Expanded row: same `bg-card` as collapsed; light ring for affordance. */
   .sub-card-expanded {
-    @apply bg-subscription;
+    @apply bg-card ring-1 ring-black/10;
   }
 
   .sub-head {
@@ -182,7 +211,7 @@
   }
 
   .sub-price {
-    @apply mb-1 text-lg font-sans-bold text-primary;
+    @apply mb-1 text-lg font-sans-bold leading-none text-primary;
   }
 
   .sub-billing {

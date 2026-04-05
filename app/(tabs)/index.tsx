@@ -1,82 +1,180 @@
+/**
+ * Home tab: layout + list composition only. Data is imported from `constants/data`
+ * (static until backend). No fetch, cache, or loading UI here.
+ */
 import "@/global.css";
 
-import { colors } from "@/constants/theme";
-import { Link } from "expo-router";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { HomeBalanceCard } from "@/components/home/HomeBalanceCard";
+import { HomeHeader } from "@/components/home/HomeHeader";
+import { HomeSubscriptionCard } from "@/components/home/HomeSubscriptionCard";
+import { ListHeading } from "@/components/home/ListHeading";
+import { UpcomingSubscriptionCard } from "@/components/home/UpcomingSubscriptionCard";
+import {
+  HOME_SUBSCRIPTIONS,
+  UPCOMING_SUBSCRIPTIONS,
+} from "@/constants/data";
+import { colors, components } from "@/constants/theme";
+import { router } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import { FlatList, ListRenderItem, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-/**
- * Home tab — quick links for dev / onboarding flows.
- * Top/sides safe area: `(tabs)/_layout.tsx`. Bottom: this `SafeAreaView`.
- */
+const { tabBar } = components;
+
+type HomeListRow =
+  | { type: "header"; key: string }
+  | { type: "balance"; key: string }
+  | { type: "listHeading"; key: string; title: string; actionLabel?: string }
+  | { type: "upcoming"; key: string }
+  | { type: "subscription"; key: string; subscription: Subscription }
+  | { type: "emptySubscriptions"; key: string };
+
+function buildRows(): HomeListRow[] {
+  const rows: HomeListRow[] = [
+    { type: "header", key: "header" },
+    { type: "balance", key: "balance" },
+    {
+      type: "listHeading",
+      key: "h-upcoming",
+      title: "Upcoming",
+      actionLabel: "View all",
+    },
+    { type: "upcoming", key: "upcoming" },
+    {
+      type: "listHeading",
+      key: "h-all",
+      title: "All Subscriptions",
+      actionLabel: "See all",
+    },
+  ];
+  if (HOME_SUBSCRIPTIONS.length === 0) {
+    rows.push({ type: "emptySubscriptions", key: "empty" });
+  } else {
+    for (const s of HOME_SUBSCRIPTIONS) {
+      rows.push({ type: "subscription", key: s.id, subscription: s });
+    }
+  }
+  return rows;
+}
+
+const HOME_ROWS = buildRows();
+
 export default function HomeTab() {
+  const insets = useSafeAreaInsets();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const bottomPad =
+    insets.bottom + tabBar.height + tabBar.horizontalInset;
+
+  const renderUpcomingItem = useCallback(
+    ({ item }: { item: UpcomingSubscription }) => (
+      <UpcomingSubscriptionCard
+        data={{
+          name: item.name,
+          price: item.price,
+          daysLeft: item.daysLeft,
+          icon: item.icon,
+          currency: item.currency,
+        }}
+      />
+    ),
+    [],
+  );
+
+  const renderItem: ListRenderItem<HomeListRow> = useCallback(
+    ({ item }) => {
+      switch (item.type) {
+        case "header":
+          return (
+            <View className="home">
+              <HomeHeader />
+            </View>
+          );
+        case "balance":
+          return <HomeBalanceCard />;
+        case "listHeading":
+          return (
+            <ListHeading
+              title={item.title}
+              actionLabel={item.actionLabel}
+              onActionPress={
+                item.actionLabel
+                  ? () => router.push("/(tabs)/subscriptions")
+                  : undefined
+              }
+            />
+          );
+        case "upcoming":
+          if (UPCOMING_SUBSCRIPTIONS.length === 0) {
+            return (
+              <Text className="upcoming-empty-state">
+                No upcoming renewals yet.
+              </Text>
+            );
+          }
+          return (
+            <View className="-mx-1 mb-1">
+              <FlatList
+                data={UPCOMING_SUBSCRIPTIONS}
+                horizontal
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(u) => u.id}
+                renderItem={renderUpcomingItem}
+                contentContainerClassName="pb-1 pl-0.5 pr-5"
+              />
+            </View>
+          );
+        case "subscription":
+          return (
+            <HomeSubscriptionCard
+              subscription={item.subscription}
+              expanded={expandedId === item.subscription.id}
+              onPress={() =>
+                setExpandedId((prev) =>
+                  prev === item.subscription.id ? null : item.subscription.id,
+                )
+              }
+            />
+          );
+        case "emptySubscriptions":
+          return (
+            <Text className="home-empty-state">
+              No subscriptions yet. Add one from the wallet tab.
+            </Text>
+          );
+        default:
+          return null;
+      }
+    },
+    [expandedId, renderUpcomingItem],
+  );
+
+  const keyExtractor = useCallback((row: HomeListRow) => row.key, []);
+
+  const listProps = useMemo(
+    () => ({
+      data: HOME_ROWS,
+      renderItem,
+      keyExtractor,
+      showsVerticalScrollIndicator: false,
+      keyboardShouldPersistTaps: "handled" as const,
+      contentContainerStyle: {
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        paddingBottom: bottomPad,
+      },
+      removeClippedSubviews: true,
+    }),
+    [bottomPad, keyExtractor, renderItem],
+  );
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
       edges={["bottom"]}
     >
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="flex-grow px-6 pb-12 pt-8"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="min-h-[320px] w-full max-w-md self-center items-center justify-center px-1">
-          <Text className="text-center text-4xl font-sans-extrabold tracking-[-0.5px] text-primary">
-            Recurly
-          </Text>
-          <Text className="mt-3 max-w-[300px] text-center text-base font-sans-medium leading-6 tracking-wide text-muted-foreground">
-            Subscription management — dev shortcuts below.
-          </Text>
-
-          <View className="mt-8 w-full max-w-sm gap-3">
-            <Link
-              href="/onboarding"
-              className="rounded-2xl bg-primary px-6 py-4"
-            >
-              <Text className="text-center text-base font-sans-bold tracking-wide text-white">
-                Onboarding
-              </Text>
-            </Link>
-            <Link
-              href="/(auth)/sign-in"
-              className="rounded-2xl border border-border bg-card px-6 py-3.5"
-            >
-              <Text className="text-center text-base font-sans-semibold tracking-wide text-primary">
-                Sign in
-              </Text>
-            </Link>
-            <Link
-              href="/(auth)/sign-up"
-              className="rounded-2xl border border-border bg-card px-6 py-3.5"
-            >
-              <Text className="text-center text-base font-sans-semibold tracking-wide text-primary">
-                Sign up
-              </Text>
-            </Link>
-          </View>
-
-          {/*
-            Sample subscriptions (static examples, no links) — restore if needed.
-            <View className="mt-10 w-full max-w-sm rounded-2xl border border-border bg-card p-5">
-              <Text className="mb-4 text-center text-[11px] font-sans-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Sample subscriptions
-              </Text>
-              <View className="gap-2.5">
-                <View className="rounded-xl bg-muted px-4 py-3.5">
-                  <Text className="text-center text-base font-sans-semibold tracking-wide text-primary">
-                    Spotify
-                  </Text>
-                </View>
-                <View className="rounded-xl bg-muted px-4 py-3.5">
-                  <Text className="text-center text-base font-sans-semibold tracking-wide text-primary">
-                    Claude Max
-                  </Text>
-                </View>
-              </View>
-            </View>
-          */}
-        </View>
-      </ScrollView>
+      <FlatList {...listProps} />
     </SafeAreaView>
   );
 }

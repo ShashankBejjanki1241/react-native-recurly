@@ -29,7 +29,7 @@ export default function HomeTab() {
           </Text>
 
           <Link
-            href="/onbording"
+            href="/onboarding"
             className="mt-6 rounded-2xl bg-primary px-6 py-4"
           >
             <Text className="text-center font-sans-bold text-white">

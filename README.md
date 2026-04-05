@@ -100,7 +100,15 @@ We use **environment-aligned long-lived branches** and **Semantic Versioning** (
 feature/* → PR → dev → (promote) → qa → (promote) → prod → tag vX.Y.Z
 ```
 
-Set GitHub’s **default branch** to **`dev`** while the team is building; switch default to **`main`** or **`prod`** later if you prefer release-first discovery.
+### Default branch on GitHub (now vs later)
+
+| Phase | Set GitHub **default branch** to | Why |
+| ----- | --------------------------------- | --- |
+| **Now (active development)** | **`dev`** | New PRs and clones match where you actually work; CodeRabbit auto-reviews PRs into `dev` with no extra setup. |
+| **When QA is the main gate** | **`qa`** (optional) | If most merges should land in `qa` first and that’s what people should branch from. |
+| **When production is primary** | **`prod`** or **`main`** | Release-first discovery; align with what you ship. |
+
+**CodeRabbit:** Root `.coderabbit.yaml` lists `dev`, `qa`, `prod`, and `main` under `reviews.auto_review.base_branches`, so **promotion PRs** (e.g. base = `qa` while default is still `dev`) still get automatic reviews. You can change the default branch over time without losing coverage on the other long-lived branches.
 
 ---
 

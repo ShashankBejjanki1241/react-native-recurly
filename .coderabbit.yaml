@@ -5,7 +5,7 @@ reviews:
   profile: chill
   auto_review:
     enabled: true
-    # GitHub default branch (set to `dev` while building) is always auto-reviewed.
+    # GitHub default branch (`main`) is always auto-reviewed.
     # These patterns add reviews for promotion PRs when base is not the default yet.
     base_branches:
       - "^dev$"

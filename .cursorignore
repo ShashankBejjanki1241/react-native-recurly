@@ -1,0 +1,3 @@
+# Cursor default rules skip lockfiles for indexing/context. Re-include the root
+# npm lockfile so the agent and @-references can use exact dependency versions.
+!package-lock.json

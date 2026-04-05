@@ -14,6 +14,8 @@ When you change application source (e.g. `app/`, `constants/`, config that affec
 
 Fix failures before committing unless the user says otherwise.
 
+**CI:** On GitHub, `.github/workflows/ci.yml` runs `npm run typecheck` and `npm run lint` on every pull request (and on pushes to `dev`, `main`, `qa`, `prod`).
+
 ## After every `git commit` and/or `git push` in this repo
 
 End the reply with a **short, accurate** reminder. Tell the user to do **one** of these so CodeRabbit actually runs:

@@ -102,6 +102,7 @@ export default function HomeTab() {
                   ? () => router.push("/(tabs)/subscriptions")
                   : undefined
               }
+              accessibilityHint="Opens the subscriptions tab"
             />
           );
         case "upcoming":

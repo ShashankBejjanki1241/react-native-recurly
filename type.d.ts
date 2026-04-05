@@ -65,6 +65,8 @@ declare global {
     title: string;
     actionLabel?: string;
     onActionPress?: () => void;
+    /** Screen reader hint for the action; defaults to `${actionLabel} button` when omitted. */
+    accessibilityHint?: string;
   }
 }
 

@@ -128,6 +128,7 @@ function HomeSubscriptionCardInner({
             <Pressable
               onPress={onCancelPress}
               disabled={isCancelling}
+              accessibilityState={{ disabled: !!isCancelling }}
               className={
                 isCancelling
                   ? "sub-cancel sub-cancel-disabled"

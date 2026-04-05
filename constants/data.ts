@@ -4,6 +4,18 @@
  */
 import { icons } from "./icons";
 
+/** Shape of `HOME_USER` fixture; mirrors a future profile API field. */
+export type HomeUser = {
+  name: string;
+};
+
+/** Shape of `HOME_BALANCE` fixture; `nextRenewalDate` is ISO 8601 (string), same as subscription dates. */
+export type HomeBalance = {
+  amount: number;
+  /** Next aggregate renewal / billing date for the balance card. */
+  nextRenewalDate: string;
+};
+
 export const tabs: AppTab[] = [
   { name: "index", title: "Home", icon: icons.home },
   { name: "subscriptions", title: "Subscriptions", icon: icons.wallet },
@@ -11,13 +23,12 @@ export const tabs: AppTab[] = [
   { name: "settings", title: "Settings", icon: icons.setting },
 ];
 
-export const HOME_USER = {
+export const HOME_USER: HomeUser = {
   name: "Adrian | JS Mastery",
 };
 
-export const HOME_BALANCE = {
+export const HOME_BALANCE: HomeBalance = {
   amount: 2489.48,
-  /** Next aggregate renewal / billing date for the balance card. */
   nextRenewalDate: "2026-04-18T09:00:00.000Z",
 };
 

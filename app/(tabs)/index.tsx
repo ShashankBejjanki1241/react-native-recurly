@@ -1,42 +1,78 @@
 import "@/global.css";
 
+import { colors } from "@/constants/theme";
 import { Link } from "expo-router";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function App() {
+/**
+ * Home tab — quick links for dev / onboarding flows.
+ * Top/sides safe area: `(tabs)/_layout.tsx`. Bottom: this `SafeAreaView`.
+ */
+export default function HomeTab() {
   return (
-    <View className="flex-1 items-center justify-center bg-background">
-      <Text className="text-xl font-bold text-success">
-        Welcome to Nativewind!
-      </Text>
-      <Link
-        href="/onbording"
-        className="mt-4 rounded bg-primary text-white p-4"
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["bottom"]}
+    >
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="flex-grow px-5 py-6"
+        keyboardShouldPersistTaps="handled"
       >
-        GO to Onboarding
-      </Link>
-      <Link
-        href="/(auth)/sign-in"
-        className="mt-4 rounded bg-primary text-white p-4"
-      >
-        GO to Sign In
-      </Link>
-      <Link
-        href="/(auth)/sign-up"
-        className="mt-4 rounded bg-primary text-white p-4"
-      >
-        GO to Sign Up
-      </Link>
-      <Link href="/Subscriptions/spotify"> Spotify Subscription </Link>
-      <Link
-        href={{
-          pathname: "/Subscriptions/[id]",
-          params: { id: "Claude" },
-        }}
-      >
-        {" "}
-        Claude Max Subscription
-      </Link>
-    </View>
+        <View className="min-h-[320px] items-center justify-center">
+          <Text className="text-center text-xl font-sans-bold text-primary">
+            Recurly
+          </Text>
+          <Text className="mt-2 max-w-[300px] text-center text-base font-sans-medium text-muted-foreground">
+            Subscription management — dev shortcuts below.
+          </Text>
+
+          <Link
+            href="/onbording"
+            className="mt-6 rounded-2xl bg-primary px-6 py-4"
+          >
+            <Text className="text-center font-sans-bold text-white">
+              Onboarding
+            </Text>
+          </Link>
+          <Link
+            href="/(auth)/sign-in"
+            className="mt-3 rounded-2xl border border-border bg-card px-6 py-3.5"
+          >
+            <Text className="text-center font-sans-semibold text-primary">
+              Sign in
+            </Text>
+          </Link>
+          <Link
+            href="/(auth)/sign-up"
+            className="mt-3 rounded-2xl border border-border bg-card px-6 py-3.5"
+          >
+            <Text className="text-center font-sans-semibold text-primary">
+              Sign up
+            </Text>
+          </Link>
+
+          <View className="mt-8 w-full max-w-sm border-t border-border pt-6">
+            <Text className="mb-3 text-center text-xs font-sans-semibold uppercase tracking-wider text-muted-foreground">
+              Sample subscriptions
+            </Text>
+            <Link href="/Subscriptions/spotify" asChild>
+              <Text className="text-center text-base font-sans-medium text-accent underline">
+                Spotify
+              </Text>
+            </Link>
+            <Link
+              href={{ pathname: "/Subscriptions/[id]", params: { id: "Claude" } }}
+              asChild
+            >
+              <Text className="mt-2 text-center text-base font-sans-medium text-accent underline">
+                Claude Max
+              </Text>
+            </Link>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -1,6 +1,5 @@
 import images from "@/constants/images";
 import { icons } from "@/constants/icons";
-import { HOME_USER } from "@/constants/data";
 import { colors } from "@/constants/theme";
 import type { HomeHeaderUserContent } from "@/types/auth";
 import { router } from "expo-router";
@@ -12,10 +11,13 @@ export type HomeHeaderProps = {
   isUserLoaded: boolean;
 };
 
+/** Home tab top bar: user avatar/name (from Clerk when loaded) and add-subscriptions affordance. */
 export function HomeHeader({ user, isUserLoaded }: HomeHeaderProps) {
-  const displayName = user?.displayName ?? HOME_USER.name;
+  const displayName = isUserLoaded ? (user?.displayName ?? "") : "";
   const avatarSource =
-    user?.imageUrl != null && user.imageUrl.length > 0
+    isUserLoaded &&
+    user?.imageUrl != null &&
+    user.imageUrl.length > 0
       ? { uri: user.imageUrl }
       : images.avatar;
 

@@ -6,7 +6,7 @@ import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 /**
- * Auth stack: default screen is sign-in. Signed-in users never stay here — redirect to tabs.
+ * Expo Router layout for `(auth)`: Clerk loading UI, stack for sign-in/up/reset, redirect to tabs when signed in.
  * @see https://clerk.com/docs/quickstarts/expo
  */
 export default function AuthGroupLayout() {

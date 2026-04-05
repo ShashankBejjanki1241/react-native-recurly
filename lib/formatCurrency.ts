@@ -1,3 +1,4 @@
+/** Last-resort `$x.xx` formatter when `Intl` rejects the currency code. */
 const USD_FALLBACK = (value: number) => {
   const n = Number.isFinite(value) ? value : 0;
   return `$${n.toFixed(2)}`;

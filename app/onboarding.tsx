@@ -25,11 +25,13 @@ const FEATURES = [
   },
 ] as const;
 
+/** Fires a light impact haptic on native platforms (no-op on web). */
 function triggerLightHaptic() {
   if (Platform.OS === "web") return;
   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 }
 
+/** Marketing-style first run: value props and entry into sign-up / sign-in. */
 export default function OnboardingScreen() {
   return (
     <SafeAreaView

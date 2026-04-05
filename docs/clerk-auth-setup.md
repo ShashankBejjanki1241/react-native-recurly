@@ -23,7 +23,7 @@ This app follows the [Clerk Expo quickstart](https://clerk.com/docs/quickstarts/
 | Piece | Role |
 |--------|------|
 | `app/_layout.tsx` | Loads fonts, then wraps the app in `ClerkProvider` + `tokenCache` from `@clerk/expo/token-cache` (Secure Store). |
-| `unstable_settings.initialRouteName` | Prefers the `(tabs)` stack so cold start hits the tab shell; `RequireAuth` sends guests to sign-in. |
+| `unstable_settings.initialRouteName` | Prefers the `(auth)` stack on cold start so Clerk loading runs in the auth layout; signed-in users redirect to `(tabs)`. Tabs still use `RequireAuth` for deep links and consistency. |
 | `app/(auth)/_layout.tsx` | Stack for sign-in/up; redirects signed-in users to `/(tabs)`. |
 | `app/(auth)/sign-in.tsx` / `sign-up.tsx` / `forgot-password.tsx` | Custom flows with `useSignIn` / `useSignUp` (Clerk’s “JavaScript” Expo path). Forgot password uses `resetPasswordEmailCode` after `signIn.create({ identifier })`. |
 | `components/auth/RequireAuth.tsx` | Guard: `useAuth()` → `<Redirect href="/(auth)/sign-in" />` when signed out. |

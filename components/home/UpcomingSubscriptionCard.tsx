@@ -8,6 +8,7 @@ import { Text, View } from "react-native";
 
 const UPCOMING_ICON = spacing[12];
 
+/** Compact upcoming-renewal row with brand icon, price, and days-left label. */
 function UpcomingSubscriptionCardInner({
   data,
 }: UpcomingSubscriptionCardProps) {

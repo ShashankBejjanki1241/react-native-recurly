@@ -17,9 +17,11 @@ type TabIconProps = {
   icon: ImageSourcePropType;
 };
 
+/** Bottom tab navigator with custom icons and safe-area chrome. */
 const TabLayout = () => {
   const insets = useSafeAreaInsets();
 
+  /** Renders a single tab bar icon with focused / unfocused styling. */
   const TabIcon = ({ focused, icon }: TabIconProps) => (
     <View className="tabs-icon">
       <View

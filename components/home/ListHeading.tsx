@@ -2,6 +2,7 @@ import { colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, Text, View } from "react-native";
 
+/** Section title with optional trailing action (e.g. “View all”). */
 export function ListHeading({
   title,
   actionLabel,

@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native";
 
+/** Email/password sign-up with email verification and Clerk captcha mount. */
 export default function SignUpScreen() {
   const router = useRouter();
   const { signUp, fetchStatus } = useSignUp();
@@ -34,7 +35,9 @@ export default function SignUpScreen() {
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
 
   const busy = fetchStatus === "fetching";
+  const trimmedEmail = email.trim();
 
+  /** Clears a single `fieldErrors` entry when the user edits that field. */
   const clearField = useCallback((key: keyof AuthFieldErrors) => {
     setFieldErrors((prev) => {
       const next = { ...prev };
@@ -43,6 +46,7 @@ export default function SignUpScreen() {
     });
   }, []);
 
+  /** Completes Clerk sign-up and navigates into the main app. */
   const finalizeSession = useCallback(async () => {
     if (!signUp) return;
     const done = await signUp.finalize({
@@ -60,13 +64,13 @@ export default function SignUpScreen() {
     }
   }, [router, signUp]);
 
+  /** Creates the password strategy sign-up and sends the email verification code when required. */
   const onSubmitForm = useCallback(async () => {
     if (!signUp) return;
     const nextErrors: AuthFieldErrors = {};
-    const addr = email.trim();
 
-    if (!addr) nextErrors.email = "Email is required.";
-    else if (!isValidEmailFormat(addr)) {
+    if (!trimmedEmail) nextErrors.email = "Email is required.";
+    else if (!isValidEmailFormat(trimmedEmail)) {
       nextErrors.email = "Enter a valid email address.";
     }
 
@@ -79,7 +83,7 @@ export default function SignUpScreen() {
     if (Object.keys(nextErrors).length > 0) return;
 
     const { error } = await signUp.password({
-      emailAddress: addr,
+      emailAddress: trimmedEmail,
       password,
     });
     if (error) {
@@ -99,8 +103,9 @@ export default function SignUpScreen() {
     }
     setPhase("verify");
     setFieldErrors({});
-  }, [email, finalizeSession, password, signUp]);
+  }, [finalizeSession, password, signUp, trimmedEmail]);
 
+  /** Verifies the email code and finalizes the session when Clerk reports complete. */
   const onVerify = useCallback(async () => {
     if (!signUp) return;
     const nextErrors: AuthFieldErrors = {};
@@ -125,6 +130,7 @@ export default function SignUpScreen() {
     }
   }, [code, finalizeSession, signUp]);
 
+  /** Resets Clerk sign-up state so the user can edit their email from scratch. */
   const onChangeEmail = useCallback(async () => {
     if (!signUp) return;
     setFieldErrors({});
@@ -133,15 +139,32 @@ export default function SignUpScreen() {
     setCode("");
   }, [signUp]);
 
-  const formSubmitDisabled = useMemo(() => {
-    return (
+  /** Resends the email verification OTP; surfaces Clerk or network errors in `fieldErrors`. */
+  const onResendCode = useCallback(async () => {
+    if (!signUp) return;
+    try {
+      const sent = await signUp.verifications.sendEmailCode();
+      if (sent.error) {
+        setFieldErrors({ form: formatClerkError(sent.error) });
+        return;
+      }
+      setFieldErrors({});
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      setFieldErrors({ form: formatClerkError({ message }) });
+    }
+  }, [signUp]);
+
+  const formSubmitDisabled = useMemo(
+    () =>
       busy ||
-      !email.trim() ||
+      !trimmedEmail ||
       !password ||
-      !isValidEmailFormat(email) ||
-      !isStrongEnoughPassword(password)
-    );
-  }, [busy, email, password]);
+      !isValidEmailFormat(trimmedEmail) ||
+      !isStrongEnoughPassword(password),
+    [busy, trimmedEmail, password],
+  );
 
   const verifyDisabled = useMemo(
     () => busy || !code.trim(),
@@ -334,7 +357,7 @@ export default function SignUpScreen() {
               <Pressable
                 className="auth-secondary-button mt-1"
                 disabled={busy}
-                onPress={() => void signUp.verifications.sendEmailCode()}
+                onPress={() => void onResendCode()}
                 accessibilityRole="button"
                 accessibilityLabel="Resend verification code"
               >

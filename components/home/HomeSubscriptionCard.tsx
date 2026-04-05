@@ -9,6 +9,7 @@ import { Pressable, Text, View } from "react-native";
 
 const SUB_ICON = spacing[16];
 
+/** Expandable subscription row: icon, pricing, renewal, and optional cancel action. */
 function HomeSubscriptionCardInner({
   subscription,
   expanded,

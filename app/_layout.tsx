@@ -20,9 +20,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   /* Splash may already be unavailable (e.g. fast refresh). */
 });
 
-/** Prefer landing in the main tab stack; auth guard redirects to sign-in when needed. */
+/** Cold start in the auth stack so Clerk `isLoaded` shows the auth loading UI; signed-in users redirect to tabs. */
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  initialRouteName: "(auth)",
 };
 
 /** Postfixes align with `global.css` `@theme` font tokens (`font-sans-*` → these names). */
@@ -36,6 +36,7 @@ const recurlySansFontMap = {
   "sans-black": PlusJakartaSans_800ExtraBold,
 } as const;
 
+/** Root layout: fonts, splash, Clerk provider, and stack navigator. */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(recurlySansFontMap);
 

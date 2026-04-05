@@ -5,7 +5,11 @@ import { AuthLegalFooter } from "@/components/auth/AuthLegalFooter";
 import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { AuthScreenShell } from "@/components/auth/AuthScreenShell";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
-import { pickSignInSecondFactor, type SignInMfaChoice } from "@/lib/auth/pick-sign-in-second-factor";
+import {
+  buildMfaMethodOptions,
+  type SignInMfaSelectableChoice,
+} from "@/lib/auth/mfa-method-options";
+import type { SignInMfaChoice } from "@/lib/auth/pick-sign-in-second-factor";
 import {
   isStrongEnoughPassword,
   isValidEmailFormat,
@@ -25,6 +29,25 @@ import {
   View,
 } from "react-native";
 
+/** Accessible label for an MFA method row in the chooser UI. */
+function mfaSelectableLabel(opt: SignInMfaSelectableChoice): string {
+  switch (opt.kind) {
+    case "email_code":
+      return opt.safeIdentifier
+        ? `Email code · ${opt.safeIdentifier}`
+        : "Email code";
+    case "phone_code":
+      return opt.safeIdentifier
+        ? `Text message · ${opt.safeIdentifier}`
+        : "Text message";
+    case "totp":
+      return "Authenticator app";
+    case "backup_code":
+      return "Backup code";
+  }
+}
+
+/** User-facing copy for unexpected `signIn.status` during password reset. */
 function signInIncompleteMessage(status: string): string {
   switch (status) {
     case "needs_first_factor":
@@ -38,11 +61,17 @@ function signInIncompleteMessage(status: string): string {
   }
 }
 
+/** Forgot-password flow: email reset code, new password, optional MFA, and native success tip. */
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { signIn, fetchStatus } = useSignIn();
 
   const [flowStep, setFlowStep] = useState<AuthForgotPasswordStep>("email");
+  const [mfaMethodOptions, setMfaMethodOptions] = useState<SignInMfaSelectableChoice[]>(
+    [],
+  );
+  /** Which MFA chooser row is awaiting `sendEmailCode` / `sendPhoneCode`. */
+  const [pendingMfaOptionKey, setPendingMfaOptionKey] = useState<string | null>(null);
   const [mfaChoice, setMfaChoice] = useState<SignInMfaChoice | null>(null);
   const [email, setEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
@@ -52,6 +81,7 @@ export default function ForgotPasswordScreen() {
 
   const busy = fetchStatus === "fetching";
 
+  /** Clears one `fieldErrors` key when the user edits that input. */
   const clearField = useCallback((key: keyof AuthFieldErrors) => {
     setFieldErrors((prev) => {
       const next = { ...prev };
@@ -60,6 +90,7 @@ export default function ForgotPasswordScreen() {
     });
   }, []);
 
+  /** Navigates to the post-auth destination (handles web absolute URLs). */
   const goToSignedInApp = useCallback(
     (path: string) => {
       if (Platform.OS === "web" && path.startsWith("http")) {
@@ -71,6 +102,7 @@ export default function ForgotPasswordScreen() {
     [router],
   );
 
+  /** Finalizes sign-in after password reset (optional native alert before navigation). */
   const finalizeSession = useCallback(
     async (opts?: { passwordJustUpdatedTip?: boolean }) => {
       if (!signIn) return;
@@ -104,9 +136,12 @@ export default function ForgotPasswordScreen() {
     [goToSignedInApp, signIn],
   );
 
+  /** Resets Clerk state and all local wizard fields back to the email step. */
   const startOver = useCallback(async () => {
     if (signIn) await signIn.reset();
     setFlowStep("email");
+    setMfaMethodOptions([]);
+    setPendingMfaOptionKey(null);
     setMfaChoice(null);
     setResetCode("");
     setNewPassword("");
@@ -114,47 +149,65 @@ export default function ForgotPasswordScreen() {
     setFieldErrors({});
   }, [signIn]);
 
-  const beginSecondFactor = useCallback(async () => {
-    if (!signIn) return false;
+  /** Populates MFA options from Clerk and shows the method chooser (no codes sent yet). */
+  const openMfaChooser = useCallback(() => {
+    if (!signIn) return;
     const factors = signIn.supportedSecondFactors ?? [];
-    const choice = pickSignInSecondFactor(factors);
-
-    if (choice.kind === "none") {
-      setFieldErrors({
-        form: "Two-step verification is required, but no supported method was returned. Check MFA in Clerk.",
-      });
-      return false;
+    const { options, error } = buildMfaMethodOptions(factors);
+    if (error) {
+      setFieldErrors({ form: error });
+      return;
     }
-
-    if (choice.kind === "unsupported_email_link") {
-      setFieldErrors({
-        form:
-          "This account uses email link for the second step. Use codes or an authenticator app in Clerk instead.",
-      });
-      return false;
-    }
-
-    if (choice.kind === "email_code") {
-      const sent = await signIn.mfa.sendEmailCode();
-      if (sent.error) {
-        setFieldErrors({ form: formatClerkError(sent.error) });
-        return false;
-      }
-    } else if (choice.kind === "phone_code") {
-      const sent = await signIn.mfa.sendPhoneCode();
-      if (sent.error) {
-        setFieldErrors({ form: formatClerkError(sent.error) });
-        return false;
-      }
-    }
-
-    setMfaChoice(choice);
-    setFlowStep("mfa");
+    setMfaMethodOptions(options);
+    setPendingMfaOptionKey(null);
+    setMfaChoice(null);
     setMfaCode("");
     setFieldErrors({});
-    return true;
+    setFlowStep("mfa_choose");
   }, [signIn]);
 
+  /** Stable key for MFA chooser rows (spinner + disable siblings while sending). */
+  const mfaOptionRowKey = useCallback(
+    (opt: SignInMfaSelectableChoice, index: number) =>
+      `${opt.kind}-${index}-${
+        "safeIdentifier" in opt ? opt.safeIdentifier : ""
+      }`,
+    [],
+  );
+
+  /** Sends the chosen second-factor code (if needed) and advances to the MFA code entry step. */
+  const onSelectMfaMethod = useCallback(
+    async (choice: SignInMfaSelectableChoice, rowKey: string) => {
+      if (!signIn) return;
+      setPendingMfaOptionKey(rowKey);
+      setFieldErrors({});
+      try {
+        if (choice.kind === "email_code") {
+          const sent = await signIn.mfa.sendEmailCode();
+          if (sent.error) {
+            setFieldErrors({ form: formatClerkError(sent.error) });
+            return;
+          }
+        } else if (choice.kind === "phone_code") {
+          const sent = await signIn.mfa.sendPhoneCode();
+          if (sent.error) {
+            setFieldErrors({ form: formatClerkError(sent.error) });
+            return;
+          }
+        }
+
+        setMfaChoice(choice);
+        setFlowStep("mfa");
+        setMfaCode("");
+        setFieldErrors({});
+      } finally {
+        setPendingMfaOptionKey(null);
+      }
+    },
+    [signIn],
+  );
+
+  /** Starts Clerk password reset: `create` + `resetPasswordEmailCode.sendCode`. */
   const onSendResetCode = useCallback(async () => {
     if (!signIn) return;
     const nextErrors: AuthFieldErrors = {};
@@ -181,6 +234,7 @@ export default function ForgotPasswordScreen() {
     setFlowStep("verify");
   }, [email, signIn]);
 
+  /** Confirms the emailed reset code and moves to the new-password step when allowed. */
   const onVerifyResetCode = useCallback(async () => {
     if (!signIn) return;
     const trimmed = resetCode.trim();
@@ -209,6 +263,7 @@ export default function ForgotPasswordScreen() {
     });
   }, [resetCode, signIn]);
 
+  /** Submits the new password, then finalizes or branches into MFA selection. */
   const onSubmitNewPassword = useCallback(async () => {
     if (!signIn) return;
     const nextErrors: AuthFieldErrors = {};
@@ -233,13 +288,14 @@ export default function ForgotPasswordScreen() {
     }
 
     if (signIn.status === "needs_second_factor") {
-      await beginSecondFactor();
+      openMfaChooser();
       return;
     }
 
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
-  }, [beginSecondFactor, finalizeSession, newPassword, signIn]);
+  }, [finalizeSession, newPassword, openMfaChooser, signIn]);
 
+  /** Completes MFA after password reset and finalizes the session when Clerk is complete. */
   const onVerifyMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
     const trimmed = mfaCode.trim();
@@ -283,6 +339,7 @@ export default function ForgotPasswordScreen() {
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
   }, [finalizeSession, mfaChoice, mfaCode, signIn]);
 
+  /** Resends email or SMS MFA OTPs for the active second factor. */
   const onResendMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
     if (mfaChoice.kind === "email_code") {
@@ -298,6 +355,7 @@ export default function ForgotPasswordScreen() {
     }
   }, [mfaChoice, signIn]);
 
+  /** Resends the password-reset email code from the verify step. */
   const onResendResetCode = useCallback(async () => {
     if (!signIn) return;
     const sent = await signIn.resetPasswordEmailCode.sendCode();
@@ -601,6 +659,74 @@ export default function ForgotPasswordScreen() {
                   <Text className="auth-button-text">Save & sign in</Text>
                 )}
               </Pressable>
+            </View>
+          </View>
+        </>
+      ) : null}
+
+      {flowStep === "mfa_choose" ? (
+        <>
+          <Text className="auth-title text-center" accessibilityRole="header">
+            Choose verification method
+          </Text>
+          <Text className="auth-subtitle">
+            Select how you want to verify. We only send email or SMS codes after you pick
+            that option.
+          </Text>
+
+          <Pressable
+            onPress={() => {
+              setFlowStep("new_password");
+              setMfaMethodOptions([]);
+              setPendingMfaOptionKey(null);
+              setFieldErrors({});
+            }}
+            className="auth-back-link"
+            accessibilityRole="button"
+            accessibilityLabel="Back to new password step"
+            disabled={busy || pendingMfaOptionKey !== null}
+          >
+            <Text className="auth-back-link-text">← Back to new password</Text>
+          </Pressable>
+
+          <View className="auth-card">
+            <View className="auth-form">
+              {fieldErrors.form ? (
+                <Text
+                  className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+                  accessibilityRole="alert"
+                >
+                  {fieldErrors.form}
+                </Text>
+              ) : null}
+
+              {mfaMethodOptions.map((opt, index) => {
+                const rowKey = mfaOptionRowKey(opt, index);
+                const rowBusy = pendingMfaOptionKey === rowKey;
+                const chooserDisabled = busy || pendingMfaOptionKey !== null;
+                return (
+                  <Pressable
+                    key={rowKey}
+                    className={
+                      chooserDisabled && !rowBusy
+                        ? "auth-secondary-button mb-2 opacity-50"
+                        : "auth-secondary-button mb-2"
+                    }
+                    disabled={chooserDisabled}
+                    onPress={() => void onSelectMfaMethod(opt, rowKey)}
+                    accessibilityRole="button"
+                    accessibilityLabel={mfaSelectableLabel(opt)}
+                  >
+                    {rowBusy ? (
+                      <ActivityIndicator color="#081126" />
+                    ) : (
+                      <Text className="auth-secondary-button-text">
+                        {mfaSelectableLabel(opt)}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         </>

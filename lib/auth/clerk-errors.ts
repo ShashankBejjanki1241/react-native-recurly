@@ -9,11 +9,13 @@ export function formatClerkError(
     return error.message;
   }
   const errs = error.errors;
-  if (Array.isArray(errs) && errs.length > 0) {
-    return errs
-      .map((e) => (typeof e.message === "string" ? e.message : ""))
-      .filter(Boolean)
-      .join("\n");
+  const messages = Array.isArray(errs)
+    ? errs
+        .map((e) => (typeof e.message === "string" ? e.message : ""))
+        .filter(Boolean)
+    : [];
+  if (messages.length === 0) {
+    return "Something went wrong. Please try again.";
   }
-  return "Something went wrong. Please try again.";
+  return messages.join("\n");
 }

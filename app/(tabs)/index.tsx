@@ -37,6 +37,7 @@ type HomeListRow =
   | { type: "subscription"; key: string; subscription: Subscription }
   | { type: "emptySubscriptions"; key: string };
 
+/** Builds FlatList rows for the home dashboard (header, balance, subscriptions, etc.). */
 function buildRows(homeSubscriptions: readonly Subscription[]): HomeListRow[] {
   const rows: HomeListRow[] = [
     { type: "header", key: "header" },
@@ -65,6 +66,7 @@ function buildRows(homeSubscriptions: readonly Subscription[]): HomeListRow[] {
   return rows;
 }
 
+/** Home tab: subscription list, balance, and Clerk-backed header. */
 export default function HomeTab() {
   const insets = useSafeAreaInsets();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export default function HomeTab() {
   const bottomPad =
     insets.bottom + tabBar.height + tabBar.horizontalInset;
 
+  /** Renders a single upcoming-renewal card inside the horizontal list. */
   const renderUpcomingItem = useCallback(
     ({ item }: { item: UpcomingSubscription }) => (
       <UpcomingSubscriptionCard
@@ -97,6 +100,7 @@ export default function HomeTab() {
     [],
   );
 
+  /** Maps home list row types to dashboard sections (header, balance, subscriptions, etc.). */
   const renderItem: ListRenderItem<HomeListRow> = useCallback(
     ({ item }) => {
       switch (item.type) {
@@ -167,6 +171,7 @@ export default function HomeTab() {
     [expandedId, headerUser, renderUpcomingItem, userLoaded],
   );
 
+  /** Stable row key for the home `FlatList`. */
   const keyExtractor = useCallback((row: HomeListRow) => row.key, []);
 
   const contentContainerStyle = useMemo(

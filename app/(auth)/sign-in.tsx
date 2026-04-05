@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 
+/** User-facing copy when `signIn.status` is not complete and not handled by a dedicated step. */
 function signInIncompleteMessage(status: string): string {
   switch (status) {
     case "needs_first_factor":
@@ -35,6 +36,7 @@ function signInIncompleteMessage(status: string): string {
   }
 }
 
+/** Email/password sign-in with optional MFA and Clerk captcha mount. */
 export default function SignInScreen() {
   const router = useRouter();
   const { signIn, fetchStatus } = useSignIn();
@@ -56,6 +58,7 @@ export default function SignInScreen() {
     });
   }, []);
 
+  /** Activates the Clerk session after `signIn.status === 'complete'`. */
   const finalizeSession = useCallback(async () => {
     if (!signIn) return;
     const done = await signIn.finalize({
@@ -73,6 +76,7 @@ export default function SignInScreen() {
     }
   }, [router, signIn]);
 
+  /** Sends the default second-factor code and moves UI to the MFA step. */
   const beginSecondFactor = useCallback(async () => {
     if (!signIn) return false;
     const factors = signIn.supportedSecondFactors ?? [];
@@ -114,6 +118,7 @@ export default function SignInScreen() {
     return true;
   }, [signIn]);
 
+  /** Validates identifier/password, runs Clerk sign-in, then MFA or finalize as needed. */
   const onSubmitCredentials = useCallback(async () => {
     if (!signIn) return;
     const nextErrors: AuthFieldErrors = {};
@@ -152,6 +157,7 @@ export default function SignInScreen() {
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
   }, [beginSecondFactor, email, finalizeSession, password, signIn]);
 
+  /** Submits the MFA code for the active `mfaChoice`, then finalizes when complete. */
   const onVerifyMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
     const nextErrors: AuthFieldErrors = {};
@@ -197,6 +203,7 @@ export default function SignInScreen() {
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
   }, [finalizeSession, mfaChoice, mfaCode, signIn]);
 
+  /** Clears MFA state and resets the Clerk sign-in attempt. */
   const onBackFromMfa = useCallback(async () => {
     if (!signIn) return;
     setFieldErrors({});
@@ -206,6 +213,7 @@ export default function SignInScreen() {
     await signIn.reset();
   }, [signIn]);
 
+  /** Resends SMS or email MFA codes when supported for the current factor. */
   const onResendMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
     if (mfaChoice.kind === "email_code") {

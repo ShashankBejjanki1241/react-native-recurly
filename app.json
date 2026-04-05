@@ -41,7 +41,6 @@
         }
       ],
       "expo-font",
-      "@clerk/expo",
       "expo-secure-store"
     ],
     "experiments": {

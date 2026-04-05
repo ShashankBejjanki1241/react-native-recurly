@@ -8,8 +8,13 @@ export type AuthSignUpPhase = "form" | "verify";
 /** Sign-in steps: credentials, then optional MFA / 2FA. */
 export type AuthSignInPhase = "credentials" | "mfa";
 
-/** Forgot-password flow: request code → verify → new password → optional MFA. */
-export type AuthForgotPasswordStep = "email" | "verify" | "new_password" | "mfa";
+/** Forgot-password flow: request code → verify → new password → MFA method choice → MFA code. */
+export type AuthForgotPasswordStep =
+  | "email"
+  | "verify"
+  | "new_password"
+  | "mfa_choose"
+  | "mfa";
 
 /** Inline field validation / API messages for auth forms. */
 export type AuthFieldErrors = {
@@ -29,6 +34,14 @@ export type HomeHeaderUserContent = {
 export type AuthBrandHeaderProps = {
   /** e.g. "Sign in" / "Sign up" */
   tagline: string;
+};
+
+/** Optional legal links under auth forms; omit all props to keep static copy only. */
+export type AuthLegalFooterProps = {
+  termsUrl?: string;
+  privacyUrl?: string;
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
 };
 
 export type AuthPasswordFieldProps = {

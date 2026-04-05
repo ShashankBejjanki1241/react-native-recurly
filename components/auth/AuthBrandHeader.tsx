@@ -1,6 +1,7 @@
 import type { AuthBrandHeaderProps } from "@/types/auth";
 import { Text, View } from "react-native";
 
+/** Recurly wordmark and tagline for auth screens. */
 export function AuthBrandHeader({ tagline }: AuthBrandHeaderProps) {
   return (
     <View className="auth-brand-block">

@@ -11,6 +11,10 @@ export type SignInMfaChoice =
 
 const PRIORITY = ["email_code", "phone_code", "totp", "backup_code"] as const;
 
+/**
+ * Picks the first supported Clerk second factor in priority order, or flags email-link-only / none.
+ * Used when sign-in status is `needs_second_factor` and a single default method is required.
+ */
 export function pickSignInSecondFactor(
   factors: readonly { strategy: string; safeIdentifier?: string }[],
 ): SignInMfaChoice {

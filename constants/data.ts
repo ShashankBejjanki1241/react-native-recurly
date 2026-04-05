@@ -4,11 +4,6 @@
  */
 import { icons } from "./icons";
 
-/** Shape of `HOME_USER` fixture; mirrors a future profile API field. */
-export type HomeUser = {
-  name: string;
-};
-
 /** Shape of `HOME_BALANCE` fixture; `nextRenewalDate` is ISO 8601 (string), same as subscription dates. */
 export type HomeBalance = {
   amount: number;
@@ -22,10 +17,6 @@ export const tabs: AppTab[] = [
   { name: "insights", title: "Insights", icon: icons.activity },
   { name: "settings", title: "Settings", icon: icons.setting },
 ];
-
-export const HOME_USER: HomeUser = {
-  name: "Adrian | JS Mastery",
-};
 
 export const HOME_BALANCE: HomeBalance = {
   amount: 2489.48,

@@ -1,8 +1,8 @@
 import "@/global.css";
 
 import { colors } from "@/constants/theme";
+import { formatClerkError } from "@/lib/auth/clerk-errors";
 import { useClerk, useUser } from "@clerk/expo";
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,16 +12,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * Top/sides safe area: `(tabs)/_layout.tsx`. Bottom: this `SafeAreaView`.
  */
 export default function SettingsTab() {
-  const router = useRouter();
   const { signOut } = useClerk();
   const { isLoaded, user } = useUser();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
+  /** Signs out via Clerk; errors stay on-screen and navigation relies on `RequireAuth`. */
   const onSignOut = async () => {
+    setSignOutError(null);
     setSigningOut(true);
     try {
       await signOut();
-      router.replace("/(auth)/sign-in");
+    } catch (e: unknown) {
+      const err =
+        e && typeof e === "object" && ("message" in e || "errors" in e)
+          ? (e as { message?: string; errors?: { message?: string }[] })
+          : {
+              message:
+                e instanceof Error ? e.message : "Could not sign out. Try again.",
+            };
+      setSignOutError(formatClerkError(err));
     } finally {
       setSigningOut(false);
     }
@@ -51,6 +61,14 @@ export default function SettingsTab() {
             <ActivityIndicator color={colors.accent} />
           </View>
         )}
+        {signOutError ? (
+          <Text
+            className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+            accessibilityRole="alert"
+          >
+            {signOutError}
+          </Text>
+        ) : null}
         <Pressable
           className="auth-button mt-5"
           disabled={signingOut}

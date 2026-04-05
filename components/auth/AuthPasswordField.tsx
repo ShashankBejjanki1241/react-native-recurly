@@ -1,9 +1,10 @@
 import { colors } from "@/constants/theme";
 import type { AuthPasswordFieldProps } from "@/types/auth";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
+/** Labeled password input with show/hide toggle; masks automatically when `editable` is false. */
 export function AuthPasswordField({
   label,
   value,
@@ -15,6 +16,12 @@ export function AuthPasswordField({
   inputAccessibilityLabel,
 }: AuthPasswordFieldProps) {
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!editable) {
+      setVisible(false);
+    }
+  }, [editable]);
 
   return (
     <View className="auth-field">

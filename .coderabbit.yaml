@@ -3,6 +3,12 @@ language: en-US
 
 reviews:
   profile: chill
+  # CodeRabbit often skips lockfiles by default; path_instructions apply when the file is in scope.
+  path_instructions:
+    - path: "package-lock.json"
+      instructions: |
+        When this file is part of the review, summarize meaningful changes: new or removed
+        packages, major version bumps, and anything that looks security-relevant.
   auto_review:
     enabled: true
     # GitHub default branch (`main`) is always auto-reviewed.

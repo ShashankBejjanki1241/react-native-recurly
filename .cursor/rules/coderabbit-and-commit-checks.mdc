@@ -1,0 +1,25 @@
+---
+description: After git commit/push — CodeRabbit reminder; verify before commit when code changes
+alwaysApply: true
+---
+
+# Commits, checks, and CodeRabbit
+
+## Before committing code changes
+
+When you change application source (e.g. `app/`, `constants/`, config that affects runtime), run checks when practical:
+
+- `npx tsc --noEmit`
+- `npm run lint`
+
+Fix failures before committing unless the user says otherwise.
+
+## After every `git commit` and/or `git push` in this repo
+
+End the reply with a **short reminder** for the user:
+
+1. **CodeRabbit** reviews **pull requests** on GitHub, not bare pushes. With `.coderabbit.yaml`, PRs **into** `dev`, `qa`, `prod`, or `main` get auto-review when the PR is opened or updated.
+2. **Direct pushes** to a branch **without a PR** usually **do not** trigger CodeRabbit.
+3. To get a review: **open a PR** into the target branch, or comment **`@coderabbitai review`** on an existing PR.
+
+Keep this block to a few sentences; do not repeat the full CodeRabbit docs.

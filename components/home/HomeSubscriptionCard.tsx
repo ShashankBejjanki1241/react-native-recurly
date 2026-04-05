@@ -1,6 +1,7 @@
 import { BrandIconImage } from "@/components/ui/BrandIconImage";
 import { CurrencyText } from "@/components/ui/CurrencyText";
 import { colors, spacing } from "@/constants/theme";
+import type { HomeSubscriptionCardProps } from "@/types/home-components";
 import { formatSubscriptionDate } from "@/lib/utils";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { memo } from "react";

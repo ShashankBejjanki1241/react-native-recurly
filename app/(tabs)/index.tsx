@@ -29,7 +29,7 @@ type HomeListRow =
   | { type: "subscription"; key: string; subscription: Subscription }
   | { type: "emptySubscriptions"; key: string };
 
-function buildRows(): HomeListRow[] {
+function buildRows(homeSubscriptions: readonly Subscription[]): HomeListRow[] {
   const rows: HomeListRow[] = [
     { type: "header", key: "header" },
     { type: "balance", key: "balance" },
@@ -47,21 +47,25 @@ function buildRows(): HomeListRow[] {
       actionLabel: "View all",
     },
   ];
-  if (HOME_SUBSCRIPTIONS.length === 0) {
+  if (homeSubscriptions.length === 0) {
     rows.push({ type: "emptySubscriptions", key: "empty" });
   } else {
-    for (const s of HOME_SUBSCRIPTIONS) {
+    for (const s of homeSubscriptions) {
       rows.push({ type: "subscription", key: s.id, subscription: s });
     }
   }
   return rows;
 }
 
-const HOME_ROWS = buildRows();
-
 export default function HomeTab() {
   const insets = useSafeAreaInsets();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Static fixtures: empty deps. When subscriptions come from API/state, pass that value into `buildRows` and list it in the dependency array.
+  const homeRows = useMemo(
+    () => buildRows(HOME_SUBSCRIPTIONS),
+    [],
+  );
 
   const bottomPad =
     insets.bottom + tabBar.height + tabBar.horizontalInset;
@@ -153,21 +157,26 @@ export default function HomeTab() {
 
   const keyExtractor = useCallback((row: HomeListRow) => row.key, []);
 
+  const contentContainerStyle = useMemo(
+    () => ({
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: bottomPad,
+    }),
+    [bottomPad],
+  );
+
   const listProps = useMemo(
     () => ({
-      data: HOME_ROWS,
+      data: homeRows,
       renderItem,
       keyExtractor,
       showsVerticalScrollIndicator: false,
       keyboardShouldPersistTaps: "handled" as const,
-      contentContainerStyle: {
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: bottomPad,
-      },
+      contentContainerStyle,
       removeClippedSubviews: true,
     }),
-    [bottomPad, keyExtractor, renderItem],
+    [contentContainerStyle, homeRows, keyExtractor, renderItem],
   );
 
   return (

@@ -28,15 +28,6 @@ declare global {
     color?: string;
   }
 
-  /** Props for `HomeSubscriptionCard`. */
-  interface HomeSubscriptionCardProps {
-    subscription: Subscription;
-    expanded: boolean;
-    onPress: () => void;
-    onCancelPress?: () => void;
-    isCancelling?: boolean;
-  }
-
   interface UpcomingSubscription {
     id: string;
     icon: ImageSourcePropType;

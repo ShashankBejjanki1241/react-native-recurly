@@ -1,4 +1,5 @@
 import { colors } from "@/constants/theme";
+import { StatusBar } from "expo-status-bar";
 import type { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ export function AuthScreenShell({ children }: AuthScreenShellProps) {
       style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top", "left", "right", "bottom"]}
     >
+      <StatusBar style="dark" />
       <KeyboardAvoidingView
         className="auth-screen"
         behavior={Platform.OS === "ios" ? "padding" : undefined}

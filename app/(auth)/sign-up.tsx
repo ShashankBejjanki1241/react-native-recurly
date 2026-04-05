@@ -1,10 +1,19 @@
 import "@/global.css";
 
+import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
+import { AuthLegalFooter } from "@/components/auth/AuthLegalFooter";
+import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { AuthScreenShell } from "@/components/auth/AuthScreenShell";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
+import {
+  isStrongEnoughPassword,
+  isValidEmailFormat,
+  MIN_SIGN_UP_PASSWORD_LENGTH,
+} from "@/lib/auth/validation";
+import type { AuthFieldErrors, AuthSignUpPhase } from "@/types/auth";
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -14,19 +23,25 @@ import {
   View,
 } from "react-native";
 
-type Phase = "form" | "verify";
-
 export default function SignUpScreen() {
   const router = useRouter();
   const { signUp, fetchStatus } = useSignUp();
 
-  const [phase, setPhase] = useState<Phase>("form");
+  const [phase, setPhase] = useState<AuthSignUpPhase>("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
 
   const busy = fetchStatus === "fetching";
+
+  const clearField = useCallback((key: keyof AuthFieldErrors) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
   const finalizeSession = useCallback(async () => {
     if (!signUp) return;
@@ -41,25 +56,34 @@ export default function SignUpScreen() {
       },
     });
     if (done.error) {
-      setFormError(formatClerkError(done.error));
+      setFieldErrors({ form: formatClerkError(done.error) });
     }
   }, [router, signUp]);
 
   const onSubmitForm = useCallback(async () => {
     if (!signUp) return;
-    setFormError("");
+    const nextErrors: AuthFieldErrors = {};
     const addr = email.trim();
-    if (!addr || !password) {
-      setFormError("Enter email and password.");
-      return;
+
+    if (!addr) nextErrors.email = "Email is required.";
+    else if (!isValidEmailFormat(addr)) {
+      nextErrors.email = "Enter a valid email address.";
     }
+
+    if (!password) nextErrors.password = "Password is required.";
+    else if (!isStrongEnoughPassword(password)) {
+      nextErrors.password = `Use at least ${MIN_SIGN_UP_PASSWORD_LENGTH} characters.`;
+    }
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     const { error } = await signUp.password({
       emailAddress: addr,
       password,
     });
     if (error) {
-      setFormError(formatClerkError(error));
+      setFieldErrors({ form: formatClerkError(error) });
       return;
     }
 
@@ -70,40 +94,68 @@ export default function SignUpScreen() {
 
     const sent = await signUp.verifications.sendEmailCode();
     if (sent.error) {
-      setFormError(formatClerkError(sent.error));
+      setFieldErrors({ form: formatClerkError(sent.error) });
       return;
     }
     setPhase("verify");
+    setFieldErrors({});
   }, [email, finalizeSession, password, signUp]);
 
   const onVerify = useCallback(async () => {
     if (!signUp) return;
-    setFormError("");
-    if (!code.trim()) {
-      setFormError("Enter the code from your email.");
-      return;
-    }
+    const nextErrors: AuthFieldErrors = {};
+    if (!code.trim()) nextErrors.code = "Enter the code from your email.";
+    setFieldErrors(nextErrors);
+    if (nextErrors.code) return;
 
     const { error } = await signUp.verifications.verifyEmailCode({
       code: code.trim(),
     });
     if (error) {
-      setFormError(formatClerkError(error));
+      setFieldErrors({ form: formatClerkError(error) });
       return;
     }
 
     if (signUp.status === "complete") {
       await finalizeSession();
     } else {
-      setFormError("Verification incomplete. Check Clerk dashboard settings.");
+      setFieldErrors({
+        form: "Verification incomplete. Check Clerk email settings for this application.",
+      });
     }
   }, [code, finalizeSession, signUp]);
+
+  const onChangeEmail = useCallback(async () => {
+    if (!signUp) return;
+    setFieldErrors({});
+    await signUp.reset();
+    setPhase("form");
+    setCode("");
+  }, [signUp]);
+
+  const formSubmitDisabled = useMemo(() => {
+    return (
+      busy ||
+      !email.trim() ||
+      !password ||
+      !isValidEmailFormat(email) ||
+      !isStrongEnoughPassword(password)
+    );
+  }, [busy, email, password]);
+
+  const verifyDisabled = useMemo(
+    () => busy || !code.trim(),
+    [busy, code],
+  );
 
   if (!signUp) {
     return (
       <AuthScreenShell>
-        <View className="auth-brand-block items-center py-12">
+        <View className="items-center py-16">
           <ActivityIndicator size="large" color="#ea7a53" />
+          <Text className="mt-4 text-sm font-sans-medium text-muted-foreground">
+            Preparing sign-up…
+          </Text>
         </View>
       </AuthScreenShell>
     );
@@ -111,24 +163,16 @@ export default function SignUpScreen() {
 
   return (
     <AuthScreenShell>
-      <View className="auth-brand-block">
-        <View className="auth-logo-wrap justify-center">
-          <View className="auth-logo-mark">
-            <Text className="auth-logo-mark-text">R</Text>
-          </View>
-          <View>
-            <Text className="auth-wordmark">Recurly</Text>
-            <Text className="auth-wordmark-sub">Sign up</Text>
-          </View>
-        </View>
-      </View>
+      <AuthBrandHeader tagline="Sign up" />
 
       {phase === "form" ? (
         <>
-          <Text className="auth-title text-center">Create your account</Text>
+          <Text className="auth-title text-center" accessibilityRole="header">
+            Create your account
+          </Text>
           <Text className="auth-subtitle">
-            We’ll email you a code if your Clerk instance requires email
-            verification.
+            Use a work or personal email. We&apos;ll verify it if your Clerk app
+            requires email confirmation.
           </Text>
 
           <View className="auth-card">
@@ -136,44 +180,69 @@ export default function SignUpScreen() {
               <View className="auth-field">
                 <Text className="auth-label">Email</Text>
                 <TextInput
-                  className="auth-input"
+                  className={
+                    fieldErrors.email ? "auth-input auth-input-error" : "auth-input"
+                  }
                   autoCapitalize="none"
+                  autoCorrect={false}
                   autoComplete="email"
                   keyboardType="email-address"
+                  textContentType="emailAddress"
                   placeholder="you@example.com"
                   placeholderTextColor="rgba(0,0,0,0.35)"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    clearField("email");
+                  }}
                   editable={!busy}
+                  returnKeyType="next"
+                  accessibilityLabel="Email address for new account"
                 />
-              </View>
-              <View className="auth-field">
-                <Text className="auth-label">Password</Text>
-                <TextInput
-                  className="auth-input"
-                  autoCapitalize="none"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(0,0,0,0.35)"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                  editable={!busy}
-                />
+                {fieldErrors.email ? (
+                  <Text className="auth-error" accessibilityLiveRegion="polite">
+                    {fieldErrors.email}
+                  </Text>
+                ) : null}
               </View>
 
-              {formError ? (
-                <Text className="auth-error">{formError}</Text>
+              <AuthPasswordField
+                label="Password"
+                value={password}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  clearField("password");
+                }}
+                editable={!busy}
+                autoComplete="new-password"
+                errorText={fieldErrors.password}
+                inputAccessibilityLabel="Password for new account"
+              />
+              <Text className="-mt-2 text-xs font-sans-medium text-muted-foreground">
+                At least {MIN_SIGN_UP_PASSWORD_LENGTH} characters, as required for new
+                accounts.
+              </Text>
+
+              {fieldErrors.form ? (
+                <Text
+                  className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+                  accessibilityRole="alert"
+                >
+                  {fieldErrors.form}
+                </Text>
               ) : null}
 
               <Pressable
                 className={
-                  busy ? "auth-button auth-button-disabled" : "auth-button"
+                  formSubmitDisabled
+                    ? "auth-button auth-button-disabled"
+                    : "auth-button"
                 }
-                disabled={busy}
+                disabled={formSubmitDisabled}
                 onPress={() => void onSubmitForm()}
                 accessibilityRole="button"
-                accessibilityLabel="Sign up"
+                accessibilityLabel="Continue sign up"
+                accessibilityState={{ disabled: formSubmitDisabled }}
               >
                 {busy ? (
                   <ActivityIndicator color="#081126" />
@@ -188,39 +257,72 @@ export default function SignUpScreen() {
         </>
       ) : (
         <>
-          <Text className="auth-title text-center">Check your email</Text>
-          <Text className="auth-subtitle">
-            Enter the verification code we sent to {email.trim()}.
+          <Text className="auth-title text-center" accessibilityRole="header">
+            Verify your email
           </Text>
+          <Text className="auth-subtitle">
+            Enter the code we sent to{" "}
+            <Text className="font-sans-bold text-primary">{email.trim()}</Text>.
+          </Text>
+
+          <Pressable
+            onPress={() => void onChangeEmail()}
+            className="auth-back-link"
+            accessibilityRole="button"
+            accessibilityLabel="Use a different email address"
+            disabled={busy}
+          >
+            <Text className="auth-back-link-text">← Use a different email</Text>
+          </Pressable>
 
           <View className="auth-card">
             <View className="auth-form">
               <View className="auth-field">
-                <Text className="auth-label">Code</Text>
+                <Text className="auth-label">Verification code</Text>
                 <TextInput
-                  className="auth-input"
+                  className={
+                    fieldErrors.code ? "auth-input auth-input-error" : "auth-input"
+                  }
                   autoCapitalize="none"
                   keyboardType="number-pad"
-                  placeholder="123456"
+                  textContentType="oneTimeCode"
+                  placeholder="6-digit code"
                   placeholderTextColor="rgba(0,0,0,0.35)"
                   value={code}
-                  onChangeText={setCode}
+                  onChangeText={(t) => {
+                    setCode(t);
+                    clearField("code");
+                  }}
                   editable={!busy}
+                  returnKeyType="done"
+                  maxLength={12}
+                  accessibilityLabel="Email verification code"
                 />
+                {fieldErrors.code ? (
+                  <Text className="auth-error" accessibilityLiveRegion="polite">
+                    {fieldErrors.code}
+                  </Text>
+                ) : null}
               </View>
 
-              {formError ? (
-                <Text className="auth-error">{formError}</Text>
+              {fieldErrors.form ? (
+                <Text
+                  className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+                  accessibilityRole="alert"
+                >
+                  {fieldErrors.form}
+                </Text>
               ) : null}
 
               <Pressable
                 className={
-                  busy ? "auth-button auth-button-disabled" : "auth-button"
+                  verifyDisabled ? "auth-button auth-button-disabled" : "auth-button"
                 }
-                disabled={busy}
+                disabled={verifyDisabled}
                 onPress={() => void onVerify()}
                 accessibilityRole="button"
-                accessibilityLabel="Verify email"
+                accessibilityLabel="Verify email and continue"
+                accessibilityState={{ disabled: verifyDisabled }}
               >
                 {busy ? (
                   <ActivityIndicator color="#081126" />
@@ -230,11 +332,11 @@ export default function SignUpScreen() {
               </Pressable>
 
               <Pressable
-                className="auth-secondary-button mt-2"
+                className="auth-secondary-button mt-1"
                 disabled={busy}
                 onPress={() => void signUp.verifications.sendEmailCode()}
                 accessibilityRole="button"
-                accessibilityLabel="Resend code"
+                accessibilityLabel="Resend verification code"
               >
                 <Text className="auth-secondary-button-text">
                   Resend code
@@ -247,12 +349,18 @@ export default function SignUpScreen() {
 
       <View className="auth-link-row">
         <Text className="auth-link-copy">Already have an account?</Text>
-        <Link href="/(auth)/sign-in" replace asChild>
-          <Pressable hitSlop={8}>
+        <Link href="/(auth)/sign-in" asChild>
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="link"
+            accessibilityLabel="Go to sign in"
+          >
             <Text className="auth-link">Sign in</Text>
           </Pressable>
         </Link>
       </View>
+
+      <AuthLegalFooter />
     </AuthScreenShell>
   );
 }

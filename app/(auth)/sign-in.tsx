@@ -1,10 +1,15 @@
 import "@/global.css";
 
+import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
+import { AuthLegalFooter } from "@/components/auth/AuthLegalFooter";
+import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { AuthScreenShell } from "@/components/auth/AuthScreenShell";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
+import { isValidEmailFormat } from "@/lib/auth/validation";
+import type { AuthFieldErrors } from "@/types/auth";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -20,35 +25,47 @@ export default function SignInScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
 
   const busy = fetchStatus === "fetching";
 
+  const clearField = useCallback((key: keyof AuthFieldErrors) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
   const onSubmit = useCallback(async () => {
     if (!signIn) return;
-    setFormError("");
+    const nextErrors: AuthFieldErrors = {};
     const id = email.trim();
-    if (!id || !password) {
-      setFormError("Enter email and password.");
-      return;
-    }
+
+    if (!id) nextErrors.email = "Email is required.";
+    else if (!isValidEmailFormat(id)) nextErrors.email = "Enter a valid email address.";
+
+    if (!password) nextErrors.password = "Password is required.";
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     const created = await signIn.create({ identifier: id });
     if (created.error) {
-      setFormError(formatClerkError(created.error));
+      setFieldErrors({ form: formatClerkError(created.error) });
       return;
     }
 
     const auth = await signIn.password({ password, identifier: id });
     if (auth.error) {
-      setFormError(formatClerkError(auth.error));
+      setFieldErrors({ form: formatClerkError(auth.error) });
       return;
     }
 
     if (signIn.status !== "complete") {
-      setFormError(
-        `Sign-in needs another step (${signIn.status}). Enable only email + password in Clerk or add MFA handling.`,
-      );
+      setFieldErrors({
+        form: `Additional step required (${signIn.status}). Configure email+password only in Clerk, or extend this flow.`,
+      });
       return;
     }
 
@@ -63,15 +80,23 @@ export default function SignInScreen() {
       },
     });
     if (done.error) {
-      setFormError(formatClerkError(done.error));
+      setFieldErrors({ form: formatClerkError(done.error) });
     }
   }, [email, password, router, signIn]);
+
+  const submitDisabled = useMemo(
+    () => busy || !email.trim() || !password || !isValidEmailFormat(email),
+    [busy, email, password],
+  );
 
   if (!signIn) {
     return (
       <AuthScreenShell>
-        <View className="auth-brand-block items-center py-12">
+        <View className="items-center py-16">
           <ActivityIndicator size="large" color="#ea7a53" />
+          <Text className="mt-4 text-sm font-sans-medium text-muted-foreground">
+            Preparing sign-in…
+          </Text>
         </View>
       </AuthScreenShell>
     );
@@ -79,21 +104,16 @@ export default function SignInScreen() {
 
   return (
     <AuthScreenShell>
-      <View className="auth-brand-block">
-        <View className="auth-logo-wrap justify-center">
-          <View className="auth-logo-mark">
-            <Text className="auth-logo-mark-text">R</Text>
-          </View>
-          <View>
-            <Text className="auth-wordmark">Recurly</Text>
-            <Text className="auth-wordmark-sub">Sign in</Text>
-          </View>
-        </View>
-      </View>
+      <AuthBrandHeader tagline="Sign in" />
 
-      <Text className="auth-title text-center">Welcome back</Text>
+      <Text
+        className="auth-title text-center"
+        accessibilityRole="header"
+      >
+        Welcome back
+      </Text>
       <Text className="auth-subtitle">
-        Use the email and password for your Clerk account.
+        Sign in with the email and password you use for Recurly.
       </Text>
 
       <View className="auth-card">
@@ -101,42 +121,63 @@ export default function SignInScreen() {
           <View className="auth-field">
             <Text className="auth-label">Email</Text>
             <TextInput
-              className="auth-input"
+              className={
+                fieldErrors.email ? "auth-input auth-input-error" : "auth-input"
+              }
               autoCapitalize="none"
+              autoCorrect={false}
               autoComplete="email"
               keyboardType="email-address"
+              textContentType="emailAddress"
               placeholder="you@example.com"
               placeholderTextColor="rgba(0,0,0,0.35)"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                clearField("email");
+              }}
               editable={!busy}
+              returnKeyType="next"
+              accessibilityLabel="Email address for sign in"
             />
-          </View>
-          <View className="auth-field">
-            <Text className="auth-label">Password</Text>
-            <TextInput
-              className="auth-input"
-              autoCapitalize="none"
-              autoComplete="password"
-              placeholder="••••••••"
-              placeholderTextColor="rgba(0,0,0,0.35)"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!busy}
-            />
+            {fieldErrors.email ? (
+              <Text className="auth-error" accessibilityLiveRegion="polite">
+                {fieldErrors.email}
+              </Text>
+            ) : null}
           </View>
 
-          {formError ? (
-            <Text className="auth-error">{formError}</Text>
+          <AuthPasswordField
+            label="Password"
+            value={password}
+            onChangeText={(t) => {
+              setPassword(t);
+              clearField("password");
+            }}
+            editable={!busy}
+            autoComplete="password"
+            errorText={fieldErrors.password}
+            inputAccessibilityLabel="Password"
+          />
+
+          {fieldErrors.form ? (
+            <Text
+              className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+              accessibilityRole="alert"
+            >
+              {fieldErrors.form}
+            </Text>
           ) : null}
 
           <Pressable
-            className={busy ? "auth-button auth-button-disabled" : "auth-button"}
-            disabled={busy}
+            className={
+              submitDisabled ? "auth-button auth-button-disabled" : "auth-button"
+            }
+            disabled={submitDisabled}
             onPress={() => void onSubmit()}
             accessibilityRole="button"
             accessibilityLabel="Sign in"
+            accessibilityState={{ disabled: submitDisabled }}
           >
             {busy ? (
               <ActivityIndicator color="#081126" />
@@ -148,13 +189,19 @@ export default function SignInScreen() {
       </View>
 
       <View className="auth-link-row">
-        <Text className="auth-link-copy">No account?</Text>
-        <Link href="/(auth)/sign-up" replace asChild>
-          <Pressable hitSlop={8}>
-            <Text className="auth-link">Create one</Text>
+        <Text className="auth-link-copy">New here?</Text>
+        <Link href="/(auth)/sign-up" asChild>
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="link"
+            accessibilityLabel="Create an account"
+          >
+            <Text className="auth-link">Create an account</Text>
           </Pressable>
         </Link>
       </View>
+
+      <AuthLegalFooter />
     </AuthScreenShell>
   );
 }

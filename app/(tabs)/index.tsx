@@ -1,6 +1,6 @@
 /**
- * Home tab: layout + list composition only. Data is imported from `constants/data`
- * (static until backend). No fetch, cache, or loading UI here.
+ * Home tab: protected route — requires Clerk session (see `RequireAuth` on tabs + guard below).
+ * Subscription rows still use static fixtures until API integration.
  */
 import "@/global.css";
 
@@ -14,9 +14,17 @@ import {
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { colors, components } from "@/constants/theme";
-import { router } from "expo-router";
+import { mapClerkUserToHomeHeader } from "@/lib/auth/map-clerk-user";
+import { useAuth, useUser } from "@clerk/expo";
+import { Redirect, router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, ListRenderItem, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  ListRenderItem,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { tabBar } = components;
@@ -61,6 +69,10 @@ export default function HomeTab() {
   const insets = useSafeAreaInsets();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
+  const headerUser = useMemo(() => mapClerkUserToHomeHeader(user), [user]);
+
   // Static fixtures: empty deps. When subscriptions come from API/state, pass that value into `buildRows` and list it in the dependency array.
   const homeRows = useMemo(
     () => buildRows(HOME_SUBSCRIPTIONS),
@@ -91,7 +103,7 @@ export default function HomeTab() {
         case "header":
           return (
             <View className="home">
-              <HomeHeader />
+              <HomeHeader user={headerUser} isUserLoaded={userLoaded} />
             </View>
           );
         case "balance":
@@ -152,7 +164,7 @@ export default function HomeTab() {
           return null;
       }
     },
-    [expandedId, renderUpcomingItem],
+    [expandedId, headerUser, renderUpcomingItem, userLoaded],
   );
 
   const keyExtractor = useCallback((row: HomeListRow) => row.key, []);
@@ -178,6 +190,26 @@ export default function HomeTab() {
     }),
     [contentContainerStyle, homeRows, keyExtractor, renderItem],
   );
+
+  if (!authLoaded) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+        edges={["bottom"]}
+      >
+        <ActivityIndicator size="large" color={colors.accent} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   return (
     <SafeAreaView

@@ -29,6 +29,9 @@ This app follows the [Clerk Expo quickstart](https://clerk.com/docs/quickstarts/
 | `app/(tabs)/_layout.tsx` | Wraps the tab navigator with `RequireAuth`. |
 | `app/Subscriptions/[id].tsx` | Wrapped with `RequireAuth` (deep links stay protected). |
 | `app/(tabs)/settings.tsx` | `useUser` + `signOut()` → `/(auth)/sign-in`. |
+| `types/auth.ts` | Shared auth UI types (`AuthFieldErrors`, `AuthSignUpPhase`, `HomeHeaderUserContent`, etc.). |
+| `lib/auth/map-clerk-user.ts` | Maps Clerk `useUser()` → `HomeHeaderUserContent` for the home header. |
+| `app/(tabs)/index.tsx` | Extra guard: `useAuth` / `Redirect` + passes Clerk user into `HomeHeader`. |
 
 ## 4. Native builds and the config plugin
 

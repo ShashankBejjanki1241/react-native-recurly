@@ -1,5 +1,5 @@
 ---
-description: After git commit/push — CodeRabbit reminder; verify before commit when code changes
+description: Before commit — tsc/lint; after push — CodeRabbit via PR or exact @coderabbitai mention
 alwaysApply: true
 ---
 
@@ -16,10 +16,11 @@ Fix failures before committing unless the user says otherwise.
 
 ## After every `git commit` and/or `git push` in this repo
 
-End the reply with a **short reminder** for the user:
+End the reply with a **short, accurate** reminder. Tell the user to do **one** of these so CodeRabbit actually runs:
 
-1. **CodeRabbit** reviews **pull requests** on GitHub, not bare pushes. With `.coderabbit.yaml`, PRs **into** `dev`, `qa`, `prod`, or `main` get auto-review when the PR is opened or updated.
-2. **Direct pushes** to a branch **without a PR** usually **do not** trigger CodeRabbit.
-3. To get a review: **open a PR** into the target branch, or comment **`@coderabbitai review`** on an existing PR.
+1. **Open a pull request** (or push commits to a branch that already has a PR) with **base branch** `dev`, `qa`, `prod`, or `main` — matches `.coderabbit.yaml` `base_branches`; opening/updating the PR triggers auto-review.
+2. **Or**, on an **existing PR**, add a **new comment** with this **exact** text (GitHub bot handle, no spaces): `@coderabbitai review` — use **`review`**, not `reveiw` or other typos. Wrong handles (e.g. `@coderabbit ai`) will not notify the bot.
 
-Keep this block to a few sentences; do not repeat the full CodeRabbit docs.
+**Does not trigger review:** pushing to `dev` / `main` **only**, with **no** open PR toward those branches.
+
+Keep the reminder brief; do not paste long docs.

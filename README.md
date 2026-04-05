@@ -157,8 +157,10 @@ On GitHub this repository uses **`main`** as the default branch (fresh clones ch
 ## Code review and quality
 
 - **Pull requests:** Target `dev` unless you are promoting to `qa`, `prod`, or `main`.
-- **CodeRabbit:** Configure the [CodeRabbit](https://coderabbit.ai) GitHub app for this repository. Settings live in `**.coderabbit.yaml`**: automatic reviews include the GitHub default branch plus patterns for `dev`, `qa`, `prod`, and `main` so promotion PRs are covered when the default branch differs.
-- **Manual review:** Comment `@coderabbitai review` on a PR to trigger or retry a review.
+- **CodeRabbit:** Install/configure the [CodeRabbit](https://coderabbit.ai) GitHub app. Repo settings live in `.coderabbit.yaml` (`dev`, `qa`, `prod`, `main` as review bases). **CodeRabbit only runs in the context of a pull request** — a plain `git push` with no PR does not get an automatic review.
+- **How to get a CodeRabbit review (pick one):**
+  1. **Open a PR** into `dev`, `qa`, `prod`, or `main` (or push new commits to the PR branch). Auto-review runs when the PR is opened or updated.
+  2. **Or** comment on the PR with the exact phrase **`@coderabbitai review`** (single bot name `coderabbitai`, then a space, then `review`) to trigger or retry a review. Typos or a space inside the handle (e.g. `@coderabbit ai`) will not work.
 
 ---
 

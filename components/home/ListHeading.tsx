@@ -5,13 +5,9 @@ import { Pressable, Text, View } from "react-native";
 export function ListHeading({
   title,
   actionLabel,
+  actionHint,
   onActionPress,
-  accessibilityHint: accessibilityHintProp,
 }: ListHeadingProps) {
-  const actionAccessibilityHint =
-    accessibilityHintProp ??
-    (actionLabel ? `${actionLabel} button` : undefined);
-
   return (
     <View className="list-head">
       <Text className="list-title">{title}</Text>
@@ -26,7 +22,7 @@ export function ListHeading({
           }}
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
-          accessibilityHint={actionAccessibilityHint}
+          accessibilityHint={actionHint ?? "Opens the selected section"}
         >
           <Text className="list-action-text">{actionLabel}</Text>
           <Ionicons

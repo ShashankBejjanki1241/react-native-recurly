@@ -64,9 +64,8 @@ declare global {
   interface ListHeadingProps {
     title: string;
     actionLabel?: string;
+    actionHint?: string;
     onActionPress?: () => void;
-    /** Screen reader hint for the action; defaults to `${actionLabel} button` when omitted. */
-    accessibilityHint?: string;
   }
 }
 

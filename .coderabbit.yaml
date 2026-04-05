@@ -1,0 +1,12 @@
+# https://docs.coderabbit.ai/configuration/auto-review
+language: en-US
+
+reviews:
+  profile: chill
+  auto_review:
+    enabled: true
+    # PRs into GitHub's default branch are always reviewed; add our integration branches.
+    base_branches:
+      - "^dev$"
+      - "^qa$"
+      - "^prod$"

@@ -6,13 +6,18 @@ import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { AuthScreenShell } from "@/components/auth/AuthScreenShell";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
 import { pickSignInSecondFactor, type SignInMfaChoice } from "@/lib/auth/pick-sign-in-second-factor";
-import { isValidEmailFormat } from "@/lib/auth/validation";
-import type { AuthFieldErrors, AuthSignInPhase } from "@/types/auth";
+import {
+  isStrongEnoughPassword,
+  isValidEmailFormat,
+  MIN_SIGN_UP_PASSWORD_LENGTH,
+} from "@/lib/auth/validation";
+import type { AuthFieldErrors, AuthForgotPasswordStep } from "@/types/auth";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   Pressable,
   Text,
@@ -23,26 +28,25 @@ import {
 function signInIncompleteMessage(status: string): string {
   switch (status) {
     case "needs_first_factor":
-      return "Additional sign-in step is required. Check your Clerk sign-in strategies.";
+      return "Reset could not continue from this state. Try again from the start.";
     case "needs_client_trust":
       return "A security check is required. Try again, or update the app if the problem continues.";
-    case "needs_new_password":
-      return "You must set a new password. Use your Clerk password reset flow if available.";
     case "needs_identifier":
-      return "Sign-in could not continue. Check your email and try again.";
+      return "Check your email and try again.";
     default:
-      return `Sign-in cannot continue (${status}). Check Clerk dashboard settings.`;
+      return `Something went wrong (${status}). Try again or contact support.`;
   }
 }
 
-export default function SignInScreen() {
+export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { signIn, fetchStatus } = useSignIn();
 
-  const [phase, setPhase] = useState<AuthSignInPhase>("credentials");
+  const [flowStep, setFlowStep] = useState<AuthForgotPasswordStep>("email");
   const [mfaChoice, setMfaChoice] = useState<SignInMfaChoice | null>(null);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
 
@@ -56,22 +60,59 @@ export default function SignInScreen() {
     });
   }, []);
 
-  const finalizeSession = useCallback(async () => {
-    if (!signIn) return;
-    const done = await signIn.finalize({
-      navigate: ({ decorateUrl }) => {
-        const path = decorateUrl("/(tabs)");
-        if (Platform.OS === "web" && path.startsWith("http")) {
-          window.location.assign(path);
-          return;
-        }
-        router.replace(path as Href);
-      },
-    });
-    if (done.error) {
-      setFieldErrors({ form: formatClerkError(done.error) });
-    }
-  }, [router, signIn]);
+  const goToSignedInApp = useCallback(
+    (path: string) => {
+      if (Platform.OS === "web" && path.startsWith("http")) {
+        window.location.assign(path);
+        return;
+      }
+      router.replace(path as Href);
+    },
+    [router],
+  );
+
+  const finalizeSession = useCallback(
+    async (opts?: { passwordJustUpdatedTip?: boolean }) => {
+      if (!signIn) return;
+      const done = await signIn.finalize({
+        navigate: ({ decorateUrl }) => {
+          const path = decorateUrl("/(tabs)");
+          const go = () => goToSignedInApp(path);
+
+          if (opts?.passwordJustUpdatedTip && Platform.OS !== "web") {
+            Alert.alert(
+              "Password updated",
+              "Your Recurly password was changed.\n\n" +
+                "Your email on this account is unchanged. To change it later, use Settings when that option is available.\n\n" +
+                "If your device asks to save or update a password for Expo Go, that comes from your phone’s password manager. " +
+                "You can tap Save password to use AutoFill next time, or Not now on that system prompt.",
+              [
+                { text: "Not now", style: "cancel", onPress: go },
+                { text: "Continue", onPress: go },
+              ],
+            );
+            return;
+          }
+
+          go();
+        },
+      });
+      if (done.error) {
+        setFieldErrors({ form: formatClerkError(done.error) });
+      }
+    },
+    [goToSignedInApp, signIn],
+  );
+
+  const startOver = useCallback(async () => {
+    if (signIn) await signIn.reset();
+    setFlowStep("email");
+    setMfaChoice(null);
+    setResetCode("");
+    setNewPassword("");
+    setMfaCode("");
+    setFieldErrors({});
+  }, [signIn]);
 
   const beginSecondFactor = useCallback(async () => {
     if (!signIn) return false;
@@ -80,7 +121,7 @@ export default function SignInScreen() {
 
     if (choice.kind === "none") {
       setFieldErrors({
-        form: "Two-step sign-in is required, but no supported second factor was returned. Check MFA settings in Clerk.",
+        form: "Two-step verification is required, but no supported method was returned. Check MFA in Clerk.",
       });
       return false;
     }
@@ -88,7 +129,7 @@ export default function SignInScreen() {
     if (choice.kind === "unsupported_email_link") {
       setFieldErrors({
         form:
-          "This account uses email link as the second step. Use an authenticator app, SMS, or email code for MFA in Clerk instead.",
+          "This account uses email link for the second step. Use codes or an authenticator app in Clerk instead.",
       });
       return false;
     }
@@ -108,22 +149,18 @@ export default function SignInScreen() {
     }
 
     setMfaChoice(choice);
-    setPhase("mfa");
+    setFlowStep("mfa");
     setMfaCode("");
     setFieldErrors({});
     return true;
   }, [signIn]);
 
-  const onSubmitCredentials = useCallback(async () => {
+  const onSendResetCode = useCallback(async () => {
     if (!signIn) return;
     const nextErrors: AuthFieldErrors = {};
     const id = email.trim();
-
     if (!id) nextErrors.email = "Email is required.";
     else if (!isValidEmailFormat(id)) nextErrors.email = "Enter a valid email address.";
-
-    if (!password) nextErrors.password = "Password is required.";
-
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -133,14 +170,65 @@ export default function SignInScreen() {
       return;
     }
 
-    const auth = await signIn.password({ password, identifier: id });
-    if (auth.error) {
-      setFieldErrors({ form: formatClerkError(auth.error) });
+    const sent = await signIn.resetPasswordEmailCode.sendCode();
+    if (sent.error) {
+      setFieldErrors({ form: formatClerkError(sent.error) });
+      return;
+    }
+
+    setResetCode("");
+    setFieldErrors({});
+    setFlowStep("verify");
+  }, [email, signIn]);
+
+  const onVerifyResetCode = useCallback(async () => {
+    if (!signIn) return;
+    const trimmed = resetCode.trim();
+    if (!trimmed) {
+      setFieldErrors({ code: "Enter the code from your email." });
+      return;
+    }
+
+    const { error } = await signIn.resetPasswordEmailCode.verifyCode({
+      code: trimmed,
+    });
+    if (error) {
+      setFieldErrors({ form: formatClerkError(error) });
+      return;
+    }
+
+    if (signIn.status === "needs_new_password") {
+      setNewPassword("");
+      setFieldErrors({});
+      setFlowStep("new_password");
+      return;
+    }
+
+    setFieldErrors({
+      form: signInIncompleteMessage(signIn.status),
+    });
+  }, [resetCode, signIn]);
+
+  const onSubmitNewPassword = useCallback(async () => {
+    if (!signIn) return;
+    const nextErrors: AuthFieldErrors = {};
+    if (!newPassword) nextErrors.password = "Password is required.";
+    else if (!isStrongEnoughPassword(newPassword)) {
+      nextErrors.password = `Use at least ${MIN_SIGN_UP_PASSWORD_LENGTH} characters.`;
+    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    const { error } = await signIn.resetPasswordEmailCode.submitPassword({
+      password: newPassword,
+    });
+    if (error) {
+      setFieldErrors({ form: formatClerkError(error) });
       return;
     }
 
     if (signIn.status === "complete") {
-      await finalizeSession();
+      await finalizeSession({ passwordJustUpdatedTip: true });
       return;
     }
 
@@ -150,15 +238,13 @@ export default function SignInScreen() {
     }
 
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
-  }, [beginSecondFactor, email, finalizeSession, password, signIn]);
+  }, [beginSecondFactor, finalizeSession, newPassword, signIn]);
 
   const onVerifyMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
-    const nextErrors: AuthFieldErrors = {};
     const trimmed = mfaCode.trim();
     if (!trimmed) {
-      nextErrors.code = "Enter your verification code.";
-      setFieldErrors(nextErrors);
+      setFieldErrors({ code: "Enter your verification code." });
       return;
     }
 
@@ -183,7 +269,7 @@ export default function SignInScreen() {
     }
 
     if (signIn.status === "complete") {
-      await finalizeSession();
+      await finalizeSession({ passwordJustUpdatedTip: true });
       return;
     }
 
@@ -196,15 +282,6 @@ export default function SignInScreen() {
 
     setFieldErrors({ form: signInIncompleteMessage(signIn.status) });
   }, [finalizeSession, mfaChoice, mfaCode, signIn]);
-
-  const onBackFromMfa = useCallback(async () => {
-    if (!signIn) return;
-    setFieldErrors({});
-    setMfaCode("");
-    setMfaChoice(null);
-    setPhase("credentials");
-    await signIn.reset();
-  }, [signIn]);
 
   const onResendMfa = useCallback(async () => {
     if (!signIn || !mfaChoice) return;
@@ -221,15 +298,35 @@ export default function SignInScreen() {
     }
   }, [mfaChoice, signIn]);
 
+  const onResendResetCode = useCallback(async () => {
+    if (!signIn) return;
+    const sent = await signIn.resetPasswordEmailCode.sendCode();
+    if (sent.error) setFieldErrors({ form: formatClerkError(sent.error) });
+    else setFieldErrors({});
+  }, [signIn]);
+
   const emailIssue =
     fieldErrors.email ??
     (email.trim().length > 0 && !isValidEmailFormat(email.trim())
       ? "Enter a valid email address."
       : undefined);
 
-  const credentialsSubmitDisabled = useMemo(
-    () => busy || !email.trim() || !password || !isValidEmailFormat(email.trim()),
-    [busy, email, password],
+  const sendDisabled = useMemo(
+    () => busy || !email.trim() || !isValidEmailFormat(email.trim()),
+    [busy, email],
+  );
+
+  const verifyCodeDisabled = useMemo(
+    () => busy || !resetCode.trim(),
+    [busy, resetCode],
+  );
+
+  const newPasswordDisabled = useMemo(
+    () =>
+      busy ||
+      !newPassword ||
+      !isStrongEnoughPassword(newPassword),
+    [busy, newPassword],
   );
 
   const mfaVerifyDisabled = useMemo(() => busy || !mfaCode.trim(), [busy, mfaCode]);
@@ -268,7 +365,7 @@ export default function SignInScreen() {
         <View className="items-center py-16">
           <ActivityIndicator size="large" color="#ea7a53" />
           <Text className="mt-4 text-sm font-sans-medium text-muted-foreground">
-            Preparing sign-in…
+            Preparing…
           </Text>
         </View>
       </AuthScreenShell>
@@ -277,15 +374,15 @@ export default function SignInScreen() {
 
   return (
     <AuthScreenShell>
-      <AuthBrandHeader tagline="Sign in" />
+      <AuthBrandHeader tagline="Reset password" />
 
-      {phase === "credentials" ? (
+      {flowStep === "email" ? (
         <>
           <Text className="auth-title text-center" accessibilityRole="header">
-            Welcome back
+            Forgot password?
           </Text>
           <Text className="auth-subtitle">
-            Sign in with the email and password you use for Recurly.
+            Enter your account email. We&apos;ll send a code to reset your password.
           </Text>
 
           <View className="auth-card">
@@ -309,39 +406,14 @@ export default function SignInScreen() {
                     clearField("email");
                   }}
                   editable={!busy}
-                  returnKeyType="next"
-                  accessibilityLabel="Email address for sign in"
+                  returnKeyType="done"
+                  accessibilityLabel="Email for password reset"
                 />
                 {emailIssue ? (
                   <Text className="auth-error" accessibilityLiveRegion="polite">
                     {emailIssue}
                   </Text>
                 ) : null}
-              </View>
-
-              <AuthPasswordField
-                label="Password"
-                value={password}
-                onChangeText={(t) => {
-                  setPassword(t);
-                  clearField("password");
-                }}
-                editable={!busy}
-                autoComplete="password"
-                errorText={fieldErrors.password}
-                inputAccessibilityLabel="Password"
-              />
-
-              <View className="mt-1 items-end">
-                <Link href="/(auth)/forgot-password" asChild>
-                  <Pressable
-                    hitSlop={12}
-                    accessibilityRole="link"
-                    accessibilityLabel="Forgot password"
-                  >
-                    <Text className="auth-link text-sm">Forgot password?</Text>
-                  </Pressable>
-                </Link>
               </View>
 
               {fieldErrors.form ? (
@@ -355,20 +427,18 @@ export default function SignInScreen() {
 
               <Pressable
                 className={
-                  credentialsSubmitDisabled
-                    ? "auth-button auth-button-disabled"
-                    : "auth-button"
+                  sendDisabled ? "auth-button auth-button-disabled" : "auth-button"
                 }
-                disabled={credentialsSubmitDisabled}
-                onPress={() => void onSubmitCredentials()}
+                disabled={sendDisabled}
+                onPress={() => void onSendResetCode()}
                 accessibilityRole="button"
-                accessibilityLabel="Sign in"
-                accessibilityState={{ disabled: credentialsSubmitDisabled }}
+                accessibilityLabel="Send reset code"
+                accessibilityState={{ disabled: sendDisabled }}
               >
                 {busy ? (
                   <ActivityIndicator color="#081126" />
                 ) : (
-                  <Text className="auth-button-text">Sign in</Text>
+                  <Text className="auth-button-text">Send reset code</Text>
                 )}
               </Pressable>
 
@@ -376,7 +446,167 @@ export default function SignInScreen() {
             </View>
           </View>
         </>
-      ) : (
+      ) : null}
+
+      {flowStep === "verify" ? (
+        <>
+          <Text className="auth-title text-center" accessibilityRole="header">
+            Check your email
+          </Text>
+          <Text className="auth-subtitle">
+            Enter the reset code we sent to{" "}
+            <Text className="font-sans-bold text-primary">{email.trim()}</Text>.
+          </Text>
+
+          <Pressable
+            onPress={() => void startOver()}
+            className="auth-back-link"
+            accessibilityRole="button"
+            accessibilityLabel="Start over with a different email"
+            disabled={busy}
+          >
+            <Text className="auth-back-link-text">← Use a different email</Text>
+          </Pressable>
+
+          <View className="auth-card">
+            <View className="auth-form">
+              <View className="auth-field">
+                <Text className="auth-label">Reset code</Text>
+                <TextInput
+                  className={
+                    fieldErrors.code ? "auth-input auth-input-error" : "auth-input"
+                  }
+                  autoCapitalize="none"
+                  keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  placeholder="6-digit code"
+                  placeholderTextColor="rgba(0,0,0,0.35)"
+                  value={resetCode}
+                  onChangeText={(t) => {
+                    setResetCode(t);
+                    clearField("code");
+                  }}
+                  editable={!busy}
+                  returnKeyType="done"
+                  maxLength={12}
+                  accessibilityLabel="Password reset code from email"
+                />
+                {fieldErrors.code ? (
+                  <Text className="auth-error" accessibilityLiveRegion="polite">
+                    {fieldErrors.code}
+                  </Text>
+                ) : null}
+              </View>
+
+              {fieldErrors.form ? (
+                <Text
+                  className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+                  accessibilityRole="alert"
+                >
+                  {fieldErrors.form}
+                </Text>
+              ) : null}
+
+              <Pressable
+                className={
+                  verifyCodeDisabled
+                    ? "auth-button auth-button-disabled"
+                    : "auth-button"
+                }
+                disabled={verifyCodeDisabled}
+                onPress={() => void onVerifyResetCode()}
+                accessibilityRole="button"
+                accessibilityLabel="Verify reset code"
+                accessibilityState={{ disabled: verifyCodeDisabled }}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#081126" />
+                ) : (
+                  <Text className="auth-button-text">Continue</Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                className="auth-secondary-button mt-1"
+                disabled={busy}
+                onPress={() => void onResendResetCode()}
+                accessibilityRole="button"
+                accessibilityLabel="Resend reset code"
+              >
+                <Text className="auth-secondary-button-text">Resend code</Text>
+              </Pressable>
+            </View>
+          </View>
+        </>
+      ) : null}
+
+      {flowStep === "new_password" ? (
+        <>
+          <Text className="auth-title text-center" accessibilityRole="header">
+            Choose a new password
+          </Text>
+          <Text className="auth-subtitle">
+            Use at least {MIN_SIGN_UP_PASSWORD_LENGTH} characters for your new password.
+          </Text>
+
+          <Pressable
+            onPress={() => void startOver()}
+            className="auth-back-link"
+            accessibilityRole="button"
+            accessibilityLabel="Cancel password reset and start over"
+            disabled={busy}
+          >
+            <Text className="auth-back-link-text">← Start over</Text>
+          </Pressable>
+
+          <View className="auth-card">
+            <View className="auth-form">
+              <AuthPasswordField
+                label="New password"
+                value={newPassword}
+                onChangeText={(t) => {
+                  setNewPassword(t);
+                  clearField("password");
+                }}
+                editable={!busy}
+                autoComplete="new-password"
+                errorText={fieldErrors.password}
+                inputAccessibilityLabel="New password"
+              />
+
+              {fieldErrors.form ? (
+                <Text
+                  className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-sans-medium text-destructive"
+                  accessibilityRole="alert"
+                >
+                  {fieldErrors.form}
+                </Text>
+              ) : null}
+
+              <Pressable
+                className={
+                  newPasswordDisabled
+                    ? "auth-button auth-button-disabled"
+                    : "auth-button"
+                }
+                disabled={newPasswordDisabled}
+                onPress={() => void onSubmitNewPassword()}
+                accessibilityRole="button"
+                accessibilityLabel="Save new password and sign in"
+                accessibilityState={{ disabled: newPasswordDisabled }}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#081126" />
+                ) : (
+                  <Text className="auth-button-text">Save & sign in</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </>
+      ) : null}
+
+      {flowStep === "mfa" ? (
         <>
           <Text className="auth-title text-center" accessibilityRole="header">
             {mfaTitle}
@@ -384,13 +614,13 @@ export default function SignInScreen() {
           <Text className="auth-subtitle">{mfaSubtitle}</Text>
 
           <Pressable
-            onPress={() => void onBackFromMfa()}
+            onPress={() => void startOver()}
             className="auth-back-link"
             accessibilityRole="button"
-            accessibilityLabel="Back to email and password"
+            accessibilityLabel="Cancel and start password reset over"
             disabled={busy}
           >
-            <Text className="auth-back-link-text">← Back to sign in</Text>
+            <Text className="auth-back-link-text">← Start over</Text>
           </Pressable>
 
           <View className="auth-card">
@@ -441,7 +671,7 @@ export default function SignInScreen() {
                 disabled={mfaVerifyDisabled}
                 onPress={() => void onVerifyMfa()}
                 accessibilityRole="button"
-                accessibilityLabel="Verify and continue sign in"
+                accessibilityLabel="Verify and finish signing in"
                 accessibilityState={{ disabled: mfaVerifyDisabled }}
               >
                 {busy ? (
@@ -465,17 +695,17 @@ export default function SignInScreen() {
             </View>
           </View>
         </>
-      )}
+      ) : null}
 
       <View className="auth-link-row">
-        <Text className="auth-link-copy">New here?</Text>
-        <Link href="/(auth)/sign-up" asChild>
+        <Text className="auth-link-copy">Remember it?</Text>
+        <Link href="/(auth)/sign-in" asChild>
           <Pressable
             hitSlop={12}
             accessibilityRole="link"
-            accessibilityLabel="Create an account"
+            accessibilityLabel="Back to sign in"
           >
-            <Text className="auth-link">Create an account</Text>
+            <Text className="auth-link">Sign in</Text>
           </Pressable>
         </Link>
       </View>

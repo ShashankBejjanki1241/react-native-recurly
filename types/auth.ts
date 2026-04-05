@@ -5,6 +5,12 @@
 /** Sign-up flow steps after email/password submit. */
 export type AuthSignUpPhase = "form" | "verify";
 
+/** Sign-in steps: credentials, then optional MFA / 2FA. */
+export type AuthSignInPhase = "credentials" | "mfa";
+
+/** Forgot-password flow: request code → verify → new password → optional MFA. */
+export type AuthForgotPasswordStep = "email" | "verify" | "new_password" | "mfa";
+
 /** Inline field validation / API messages for auth forms. */
 export type AuthFieldErrors = {
   email?: string;

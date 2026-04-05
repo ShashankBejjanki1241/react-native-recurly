@@ -2,12 +2,6 @@ import { colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, Text, View } from "react-native";
 
-type ListHeadingProps = {
-  title: string;
-  actionLabel?: string;
-  onActionPress?: () => void;
-};
-
 export function ListHeading({
   title,
   actionLabel,

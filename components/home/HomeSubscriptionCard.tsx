@@ -8,21 +8,13 @@ import { Pressable, Text, View } from "react-native";
 
 const SUB_ICON = spacing[16];
 
-type Props = {
-  subscription: Subscription;
-  expanded: boolean;
-  onPress: () => void;
-  onCancelPress?: () => void;
-  isCancelling?: boolean;
-};
-
 function HomeSubscriptionCardInner({
   subscription,
   expanded,
   onPress,
   onCancelPress,
   isCancelling,
-}: Props) {
+}: HomeSubscriptionCardProps) {
   const {
     icon,
     name,

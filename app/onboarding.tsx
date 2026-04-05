@@ -113,7 +113,7 @@ export default function OnboardingScreen() {
               </Text>
             </Pressable>
           </Link>
-          <Link href="/(auth)/sign-in" asChild>
+          <Link href="/(auth)/sign-in" replace asChild>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Sign in"

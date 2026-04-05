@@ -1,129 +1,173 @@
 # Recurly
 
-**Recurly** is a subscription management app built with React Native. Track renewals, spending, and plans in one place—on iOS, Android, and web.
+Cross-platform subscription management for React Native—track renewals, spending, and plans on **iOS**, **Android**, and **web**.
+
+**Status:** Early development · **Version:** `0.1.0` (see `package.json` and `VERSION`)
 
 ---
 
-## Stack
+## Contents
 
-| Layer                  | Technology                                                                                                                                                                             |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Framework**          | [Expo](https://expo.dev) SDK 54 · [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing)                                                                       |
-| **UI**                 | [React Native](https://reactnative.dev) 0.81 · [React](https://react.dev) 19                                                                                                           |
-| **Styling**            | [NativeWind](https://www.nativewind.dev) v5 (preview) · [Tailwind CSS](https://tailwindcss.com) v4 · `global.css` · [react-native-css](https://github.com/nativewind/react-native-css) |
-| **Language & quality** | TypeScript · ESLint (`eslint-config-expo`)                                                                                                                                             |
-| **Navigation UX**      | React Navigation · `react-native-screens` · `react-native-safe-area-context` · Reanimated · Gesture Handler                                                                            |
-
-### Development
-
-- **Expo CLI / dev server** — `npx expo start` (Expo Go, simulators, or [development builds](https://docs.expo.dev/develop/development-builds/introduction/))
-- **Metro** — bundler (configured with NativeWind)
-
-### Integrations (roadmap)
-
-- **[Clerk](https://clerk.com)** — authentication and user management; billing flows where applicable
-- **[PostHog](https://posthog.com)** — product analytics and feature flags
-
-### Delivery & collaboration
-
-- **[EAS](https://docs.expo.dev/eas/)** (Expo Application Services) — cloud builds, updates, and app store submission (`eas build`, `eas submit`)
-- **[CodeRabbit](https://coderabbit.ai)** — AI-assisted pull request reviews (enable the GitHub app on this repository)
+1. [Overview](#overview)
+2. [Technology stack](#technology-stack)
+3. [Prerequisites](#prerequisites)
+4. [Getting started](#getting-started)
+5. [npm scripts](#npm-scripts)
+6. [Repository layout](#repository-layout)
+7. [Branching, releases, and versioning](#branching-releases-and-versioning)
+8. [Code review and quality](#code-review-and-quality)
+9. [Repository URL](#repository-url)
+10. [License](#license)
 
 ---
 
-## Requirements
+## Overview
 
-- **Node.js `>= 20.19.4`** — React Native 0.81 and Metro declare this minimum. If you see `npm warn EBADENGINE` (e.g. current `v20.19.3`), upgrade Node (patch bump is enough). With [nvm](https://github.com/nvm-sh/nvm): `nvm install` / `nvm use` (see root `.nvmrc`).
-- [npm](https://www.npmjs.com/) or your preferred package manager
-- For device builds: Xcode (iOS), Android Studio (Android), and an [Expo](https://expo.dev) account for EAS when you wire it up
+Recurly is an Expo-based mobile and web application focused on **subscription lifecycle visibility**: what you pay for, when it renews, and how it fits your budget. The codebase uses **file-based routing** (Expo Router), **TypeScript**, and **NativeWind** for a single design system across platforms.
+
+Planned integrations include **Clerk** (authentication and billing-related flows) and **PostHog** (analytics and experimentation). Builds and store distribution are intended to run through **EAS** when you enable it.
+
+---
+
+## Technology stack
+
+
+| Area                    | Choices                                                                                                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Runtime**             | [Expo](https://expo.dev) SDK 54 · [React Native](https://reactnative.dev) 0.81 · [React](https://react.dev) 19                                                                         |
+| **Routing**             | [Expo Router](https://docs.expo.dev/router/introduction/)                                                                                                                              |
+| **Styling**             | [NativeWind](https://www.nativewind.dev) v5 (preview) · [Tailwind CSS](https://tailwindcss.com) v4 · `global.css` · [react-native-css](https://github.com/nativewind/react-native-css) |
+| **Language & linting**  | TypeScript · ESLint (`[eslint-config-expo](https://docs.expo.dev/guides/using-eslint/)`)                                                                                               |
+| **Navigation & motion** | React Navigation · `react-native-screens` · `react-native-safe-area-context` · Reanimated · Gesture Handler                                                                            |
+| **Bundling**            | Metro (NativeWind-enabled via `metro.config.js`)                                                                                                                                       |
+
+
+**Utilities:** `clsx` for conditional `className` composition where used.
+
+---
+
+## Prerequisites
+
+
+| Requirement           | Notes                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Node.js**           | `>= 20.19.4` (declared in `package.json` `engines` and `.nvmrc`). Patch upgrade fixes `npm` `EBADENGINE` warnings from Metro / React Native. |
+| **Package manager**   | npm (lockfile provided); pnpm or Yarn work if you regenerate locks.                                                                          |
+| **Mobile toolchains** | Xcode (iOS) and Android Studio (Android) for simulators and store builds.                                                                    |
+| **Expo account**      | Recommended when you adopt **EAS** for cloud builds and submission.                                                                          |
+
 
 ---
 
 ## Getting started
 
 ```bash
+git clone git@github.com:ShashankBejjanki1241/react-native-recurly.git
+cd react-native-recurly
 npm install
 npx expo start
 ```
 
-Then open the project in Expo Go, an emulator/simulator, or a development build.
-
-Common scripts:
-
-| Command           | Description             |
-| ----------------- | ----------------------- |
-| `npm start`       | Start the Metro bundler |
-| `npm run android` | Start on Android        |
-| `npm run ios`     | Start on iOS            |
-| `npm run web`     | Start for web           |
-| `npm run lint`    | Run ESLint              |
+Open the app in **Expo Go**, an **iOS Simulator**, **Android Emulator**, or a **development build** as described in the [Expo workflow docs](https://docs.expo.dev/workflow/overview/).
 
 ---
 
-## Project layout
+## npm scripts
 
-- `app/` — Expo Router routes (`(tabs)`, `(auth)`, etc.)
-- `global.css` — theme tokens and shared styles (Tailwind / NativeWind)
-- `assets/` — images and static assets
+
+| Script            | Purpose                          |
+| ----------------- | -------------------------------- |
+| `npm start`       | Start the Metro dev server       |
+| `npm run ios`     | Run on iOS simulator / device    |
+| `npm run android` | Run on Android emulator / device |
+| `npm run web`     | Run the web target               |
+| `npm run lint`    | Run ESLint (Expo preset)         |
+
+
+**Typecheck (no emit):** `npx tsc --noEmit`
 
 ---
 
-## Git branches, releases, and versioning
+## Repository layout
 
-We use **environment-aligned long-lived branches** and **Semantic Versioning** ([SemVer](https://semver.org/)).
-
-| Branch     | Purpose                                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------ |
-| **`dev`**  | Day-to-day integration. Feature branches merge here via PR. **Default branch for active development.**       |
-| **`qa`**   | QA / staging. Updated when `dev` is stable enough for a test build (merge or promote from `dev`).            |
-| **`prod`** | Production. Only merges from `qa` after sign-off. Matches what ships to stores.                              |
-| **`main`** | Kept in sync with **`prod`** (or latest stable) so clones without checking `prod` still see release history. |
-
-**Version numbers** (in `package.json`, `app.json` / `expo.version` when you wire EAS, and root `VERSION`):
-
-- **`MAJOR.MINOR.PATCH`** (e.g. `1.4.2`) — bump **PATCH** for fixes, **MINOR** for backward-compatible features, **MAJOR** for breaking changes.
-- **Pre-release** (optional on `dev` / `qa`): `1.0.0-rc.1`, `1.0.0-beta.2`.
-
-**Git tags** (on `prod` after each store release):
-
-- `v1.0.0`, `v1.1.0`, … — always match the version you released.
-
-**Feature branch names** (merge → `dev`):
-
-- `feature/short-description` — new capability
-- `fix/issue-or-scope` — bugfix
-- `chore/task` — tooling, deps, docs only
-
-**Typical flow**
-
-```text
-feature/* → PR → dev → (promote) → qa → (promote) → prod → tag vX.Y.Z
+```
+.
+├── app/                 # Expo Router: routes, groups (tabs), layouts
+├── assets/              # Fonts, icons, images, splash assets
+├── constants/           # Static config (e.g. tab metadata, icon map)
+├── global.css           # Design tokens and Tailwind / NativeWind layers
+├── metro.config.js      # Metro + NativeWind
+├── postcss.config.mjs   # PostCSS (Tailwind)
+├── .coderabbit.yaml     # CodeRabbit review configuration
+├── .nvmrc               # Node version hint for nvm
+├── VERSION              # Human-readable SemVer line (keep in sync with releases)
+└── package.json
 ```
 
-Set GitHub’s **default branch** to **`dev`** while the team is building; switch default to **`main`** or **`prod`** later if you prefer release-first discovery.
+---
+
+## Branching, releases, and versioning
+
+### Long-lived branches
+
+
+| Branch | Role                                                                                                                               |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `dev`  | Primary integration branch. Feature work merges here via pull request. **Use as GitHub default branch during active development.** |
+| `qa`   | Staging / pre-production validation; updated when `dev` is stable enough to test as a release candidate.                           |
+| `prod` | Production-aligned code; merge from `qa` after sign-off. Tag releases from here.                                                   |
+| `main` | Optional mirror of stable or `prod` for clones and tooling that expect `main`.                                                     |
+
+
+### Versioning and tags
+
+- Follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
+- Pre-releases (e.g. `1.0.0-rc.1`) may be used on `dev` or `qa` as needed.
+- When releasing from `prod`, create a Git tag `vX.Y.Z` that matches the shipped version (`package.json`, `app.json` / EAS, and `VERSION`).
+
+### Branch naming (merge into `dev`)
+
+
+| Prefix     | Use case                             |
+| ---------- | ------------------------------------ |
+| `feature/` | New functionality                    |
+| `fix/`     | Bug fixes                            |
+| `chore/`   | Tooling, dependencies, documentation |
+
+
+### Promotion flow
+
+```text
+feature|fix|chore/*  →  PR  →  dev  →  qa  →  prod  →  git tag vX.Y.Z
+```
+
+### GitHub default branch
+
+
+| Phase               | Suggested default | Rationale                                       |
+| ------------------- | ----------------- | ----------------------------------------------- |
+| Active development  | `dev`             | Aligns clones and new PR bases with daily work. |
+| QA-centric workflow | `qa`              | When most integration happens on staging first. |
+| Release-first       | `prod` or `main`  | When the default should reflect what ships.     |
+
 
 ---
 
-## Suggested GitHub topics
+## Code review and quality
 
-You can paste these into the repository **Topics** field on GitHub:
-
-`expo` · `react-native` · `expo-router` · `nativewind` · `tailwindcss` · `typescript` · `subscription-management` · `mobile` · `clerk` · `posthog` · `eas` · `react-native-reanimated`
+- **Pull requests:** Target `dev` unless you are promoting to `qa`, `prod`, or `main`.
+- **CodeRabbit:** Configure the [CodeRabbit](https://coderabbit.ai) GitHub app for this repository. Settings live in `**.coderabbit.yaml`**: automatic reviews include the GitHub default branch plus patterns for `dev`, `qa`, `prod`, and `main` so promotion PRs are covered when the default branch differs.
+- **Manual review:** Comment `@coderabbitai review` on a PR to trigger or retry a review.
 
 ---
 
-## Repository
+## Repository URL
 
 ```text
 git@github.com:ShashankBejjanki1241/react-native-recurly.git
 ```
 
-Clone:
-
-```bash
-git clone git@github.com:ShashankBejjanki1241/react-native-recurly.git
-cd react-native-recurly
-```
+**Suggested GitHub topics:** `expo`, `react-native`, `expo-router`, `nativewind`, `tailwindcss`, `typescript`, `subscription-management`, `mobile`, `clerk`, `posthog`, `eas`, `react-native-reanimated`
 
 ---
 

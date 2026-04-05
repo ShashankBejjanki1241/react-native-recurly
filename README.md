@@ -113,10 +113,10 @@ Open the app in **Expo Go**, an **iOS Simulator**, **Android Emulator**, or a **
 
 | Branch | Role                                                                                                                               |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `dev`  | Primary integration branch. Feature work merges here via pull request. **Use as GitHub default branch during active development.** |
+| `dev`  | Primary integration branch. Feature work merges here via pull request.                                                              |
 | `qa`   | Staging / pre-production validation; updated when `dev` is stable enough to test as a release candidate.                           |
 | `prod` | Production-aligned code; merge from `qa` after sign-off. Tag releases from here.                                                   |
-| `main` | Optional mirror of stable or `prod` for clones and tooling that expect `main`.                                                     |
+| `main` | **GitHub default branch** for this repo (`origin/HEAD`). Stable or promotion target; align with your `prod` policy as you prefer.   |
 
 
 ### Versioning and tags
@@ -143,6 +143,7 @@ feature|fix|chore/*  →  PR  →  dev  →  qa  →  prod  →  git tag vX.Y.Z
 
 ### GitHub default branch
 
+On GitHub this repository uses **`main`** as the default branch (fresh clones check out `main`; `git remote set-head origin -a` syncs local `origin/HEAD` after a remote change).
 
 | Phase               | Suggested default | Rationale                                       |
 | ------------------- | ----------------- | ----------------------------------------------- |

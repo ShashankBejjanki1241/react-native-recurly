@@ -11,7 +11,9 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
 
-void SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* Splash may already be unavailable (e.g. fast refresh). */
+});
 
 /** Postfixes align with `global.css` `@theme` font tokens (`font-sans-*` → these names). */
 const recurlySansFontMap = {
@@ -25,14 +27,23 @@ const recurlySansFontMap = {
 } as const;
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts(recurlySansFontMap);
+  const [fontsLoaded, fontError] = useFonts(recurlySansFontMap);
 
   useEffect(() => {
-    if (!fontsLoaded) return;
-    void SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (!fontsLoaded && fontError == null) return;
 
-  if (!fontsLoaded) {
+    const hideSplash = async () => {
+      try {
+        await SplashScreen.hideAsync();
+      } catch {
+        /* Already hidden or native module not ready. */
+      }
+    };
+
+    void hideSplash();
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && fontError == null) {
     return null;
   }
 

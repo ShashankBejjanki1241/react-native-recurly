@@ -104,6 +104,27 @@ Set GitHub’s **default branch** to **`dev`** while the team is building; switc
 
 ---
 
+## CodeRabbit (AI PR reviews)
+
+CodeRabbit only runs on **pull requests**. If the dashboard says *“No open pull requests”*, either the GitHub app is not installed on this repo or there are no open PRs yet.
+
+### Install on GitHub
+
+1. Open **[coderabbit.ai](https://coderabbit.ai)** and sign in with GitHub.
+2. Install the **CodeRabbit** GitHub App and choose **repository access**.
+3. Under **Only select repositories**, add **`ShashankBejjanki1241/react-native-recurly`** (or your fork), then save.
+4. Confirm in GitHub: **Repository → Settings → Integrations → GitHub Apps → CodeRabbit → Configure** — this repo must be listed.
+
+### Trigger a review (try it)
+
+1. Push a branch (e.g. `feature/your-change` or `chore/docs-tweak`).
+2. On GitHub: **Pull requests → New pull request** — base **`dev`**, compare your branch — **Create pull request**.
+3. Within a minute or two, CodeRabbit should comment or leave a review on the PR (if the app is installed and billing/plan allows it).
+
+**CLI (if [GitHub CLI](https://cli.github.com/) is installed and logged in):** from your branch, `gh pr create --base dev --fill` opens a PR without using the web UI.
+
+---
+
 ## Suggested GitHub topics
 
 You can paste these into the repository **Topics** field on GitHub:

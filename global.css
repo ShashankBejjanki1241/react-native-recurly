@@ -71,7 +71,7 @@
   }
 
   .home-header {
-    @apply mb-2.5 flex-row items-center justify-between gap-3;
+    @apply mb-4 flex-row items-center justify-between gap-3;
   }
 
   /* Profile icon + HOME_USER.name in a row; gap matches theme tab horizontalInset (20px). */
@@ -96,36 +96,37 @@
     @apply shrink-0 items-center justify-center rounded-full active:opacity-70;
   }
 
+  /* Uniform radius reads intentional; matches rounded cards below. */
   .home-balance-card {
-    @apply my-2.5 min-h-50 justify-between gap-5 rounded-bl-4xl rounded-tr-4xl bg-accent p-6;
+    @apply mb-5 mt-1 min-h-48 justify-between gap-4 rounded-3xl bg-accent p-5;
   }
 
   .home-balance-label {
-    @apply text-xl font-sans-semibold text-white/80;
+    @apply text-base font-sans-semibold tracking-wide text-white/85;
   }
 
   .home-balance-row {
-    @apply flex-row items-center justify-between;
+    @apply flex-row items-end justify-between gap-4;
   }
 
   .home-balance-amount {
-    @apply text-4xl font-sans-extrabold leading-none text-white;
+    @apply min-w-0 flex-1 text-4xl font-sans-extrabold leading-none text-white;
   }
 
   .home-balance-date {
-    @apply text-xl font-sans-medium text-white;
+    @apply text-lg font-sans-semibold leading-tight text-white;
   }
 
   .home-balance-renewal {
-    @apply items-end;
+    @apply max-w-[45%] shrink-0 items-end;
   }
 
   .home-balance-renewal-label {
-    @apply text-sm font-sans-semibold text-white/75;
+    @apply mb-0.5 text-base font-sans-semibold text-white/80;
   }
 
   .list-head {
-    @apply my-5 flex-row items-center justify-between;
+    @apply mt-6 mb-3 flex-row items-center justify-between;
   }
 
   .list-title {
@@ -133,16 +134,16 @@
   }
 
   .list-action {
-    @apply min-h-11 min-w-[44px] flex-row items-center justify-center rounded-full border border-black/20 px-4 py-2 active:opacity-60;
+    @apply min-h-11 min-w-[44px] flex-row items-center justify-center rounded-full border border-black/15 bg-card/60 px-3.5 py-2 active:opacity-60;
   }
 
   .list-action-text {
     @apply text-base font-sans-semibold text-primary leading-none;
   }
 
-  /* Fixed width + padding: stable cross-platform row; room for icon + single-line price. */
+  /* Same surface language as `.sub-card` (border + soft shadow). */
   .upcoming-card {
-    @apply mr-4 w-48 shrink-0 flex-col rounded-2xl border border-black/10 bg-card p-3.5 shadow-sm shadow-black/5;
+    @apply mr-4 w-48 shrink-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-sm shadow-black/5;
   }
 
   .upcoming-row {
@@ -154,11 +155,11 @@
   }
 
   .upcoming-icon {
-    @apply size-14;
+    @apply size-12;
   }
 
   .upcoming-price {
-    @apply self-start text-lg font-sans-bold leading-none text-primary;
+    @apply self-start text-base font-sans-bold leading-none text-primary;
   }
 
   .upcoming-meta {
@@ -166,7 +167,7 @@
   }
 
   .upcoming-name {
-    @apply mt-2.5 w-full text-lg font-sans-bold leading-snug text-primary;
+    @apply mt-2 w-full text-base font-sans-semibold leading-snug text-primary;
   }
 
   .upcoming-empty-state {
@@ -174,10 +175,10 @@
   }
 
   .sub-card {
-    @apply rounded-2xl border border-border p-4;
+    @apply rounded-2xl border border-border bg-card p-4 shadow-sm shadow-black/5;
   }
 
-  /* Expanded row: same `bg-card` as collapsed; light ring for affordance. */
+  /* Expanded row: same `bg-card` as collapsed; ring lifts affordance without a second visual language. */
   .sub-card-expanded {
     @apply bg-card ring-1 ring-black/10;
   }

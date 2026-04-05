@@ -44,7 +44,7 @@ function buildRows(): HomeListRow[] {
       type: "listHeading",
       key: "h-all",
       title: "All Subscriptions",
-      actionLabel: "See all",
+      actionLabel: "View all",
     },
   ];
   if (HOME_SUBSCRIPTIONS.length === 0) {
@@ -114,7 +114,7 @@ export default function HomeTab() {
             );
           }
           return (
-            <View className="-mx-1 mb-1">
+            <View className="-mx-1 mb-4">
               <FlatList
                 data={UPCOMING_SUBSCRIPTIONS}
                 horizontal
@@ -162,7 +162,7 @@ export default function HomeTab() {
       keyboardShouldPersistTaps: "handled" as const,
       contentContainerStyle: {
         paddingHorizontal: 20,
-        paddingTop: 8,
+        paddingTop: 12,
         paddingBottom: bottomPad,
       },
       removeClippedSubviews: true,

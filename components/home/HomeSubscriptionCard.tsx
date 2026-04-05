@@ -39,9 +39,7 @@ function HomeSubscriptionCardInner({
   return (
     <View
       className={
-        expanded
-          ? "sub-card sub-card-expanded mb-3 border-border bg-card"
-          : "sub-card mb-3 border-border bg-card"
+        expanded ? "sub-card sub-card-expanded mb-3" : "sub-card mb-3"
       }
       style={
         !expanded && accentColor

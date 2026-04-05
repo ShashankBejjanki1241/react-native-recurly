@@ -6,7 +6,7 @@ import { formatUpcomingDaysLeft } from "@/lib/utils";
 import { memo, useMemo } from "react";
 import { Text, View } from "react-native";
 
-const UPCOMING_ICON = spacing[14];
+const UPCOMING_ICON = spacing[12];
 
 function UpcomingSubscriptionCardInner({
   data,

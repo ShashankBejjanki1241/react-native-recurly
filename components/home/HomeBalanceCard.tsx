@@ -7,6 +7,7 @@ import { HOME_BALANCE } from "@/constants/data";
 import { formatSubscriptionDate } from "@/lib/utils";
 import { Text, View } from "react-native";
 
+/** Home tab balance summary using static `HOME_BALANCE` fixture data. */
 export function HomeBalanceCard() {
   const renewalLabel = formatSubscriptionDate(HOME_BALANCE.nextRenewalDate);
 

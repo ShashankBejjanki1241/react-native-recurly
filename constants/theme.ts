@@ -1,3 +1,4 @@
+/** Brand and semantic colors shared across native and web. */
 export const colors = {
   background: "#fff9e3",
   foreground: "#081126",
@@ -12,6 +13,7 @@ export const colors = {
   subscription: "#8fd1bd",
 } as const;
 
+/** Spacing scale in px (use keys for layout, tab bar, icons). */
 export const spacing = {
   0: 0,
   1: 4,
@@ -34,6 +36,7 @@ export const spacing = {
   30: 120,
 } as const;
 
+/** Composite layout tokens (e.g. tab bar dimensions). */
 export const components = {
   tabBar: {
     height: spacing[18],
@@ -44,6 +47,7 @@ export const components = {
   },
 } as const;
 
+/** Aggregates `colors`, `spacing`, and `components` for convenient imports. */
 export const theme = {
   colors,
   spacing,

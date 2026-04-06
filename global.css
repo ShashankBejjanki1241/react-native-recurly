@@ -74,7 +74,7 @@
     @apply mb-4 flex-row items-center justify-between gap-3;
   }
 
-  /* Profile icon + HOME_USER.name in a row; gap matches theme tab horizontalInset (20px). */
+  /* Profile icon + display name in a row; gap matches theme tab horizontalInset (20px). */
   .home-user {
     @apply min-w-0 flex-1 flex-row items-center gap-5;
   }
@@ -381,6 +381,34 @@
 
   .auth-link {
     @apply text-sm font-sans-bold text-accent;
+  }
+
+  .auth-password-wrap {
+    @apply min-h-[52px] flex-row items-stretch overflow-hidden rounded-2xl border border-border bg-background;
+  }
+
+  .auth-password-wrap-error {
+    @apply border-destructive;
+  }
+
+  .auth-password-input {
+    @apply min-h-[52px] flex-1 px-4 py-3.5 text-base font-sans-medium text-primary;
+  }
+
+  .auth-password-toggle {
+    @apply w-12 shrink-0 items-center justify-center active:opacity-60;
+  }
+
+  .auth-legal {
+    @apply mt-8 px-1 text-center text-xs font-sans-medium leading-5 text-muted-foreground;
+  }
+
+  .auth-back-link {
+    @apply mb-4 self-start py-2;
+  }
+
+  .auth-back-link-text {
+    @apply text-sm font-sans-semibold text-accent;
   }
 
   .modal-overlay {

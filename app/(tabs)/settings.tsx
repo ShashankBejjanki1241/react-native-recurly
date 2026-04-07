@@ -2,6 +2,7 @@ import "@/global.css";
 
 import { colors } from "@/constants/theme";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
+import { posthog } from "@/lib/posthog";
 import { useClerk, useUser } from "@clerk/expo";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -22,6 +23,8 @@ export default function SettingsTab() {
     setSignOutError(null);
     setSigningOut(true);
     try {
+      posthog.capture("user_signed_out");
+      posthog.reset();
       await signOut();
     } catch (e: unknown) {
       const err =
@@ -48,7 +51,7 @@ export default function SettingsTab() {
         Profile, billing, and app preferences will live here.
       </Text>
 
-      <View className="mt-8 rounded-2xl border border-border bg-card p-5">
+      <View className="sub-card mt-8">
         <Text className="text-xs font-sans-semibold uppercase tracking-widest text-muted-foreground">
           Account
         </Text>
@@ -84,7 +87,7 @@ export default function SettingsTab() {
         </Pressable>
       </View>
 
-      <Text className="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center text-sm font-sans-medium text-muted-foreground">
+      <Text className="mt-6 rounded-2xl border border-dashed border-black/12 bg-white/35 p-6 text-center text-sm font-sans-medium text-muted-foreground">
         More options coming soon.
       </Text>
     </SafeAreaView>

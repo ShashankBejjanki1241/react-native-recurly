@@ -1,11 +1,18 @@
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { posthog } from "@/lib/posthog";
 import { Link, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /** Deep-linked subscription detail placeholder (protected). */
 const SubscriptionDetails = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  useEffect(() => {
+    posthog.capture("subscription_detail_viewed", { subscription_id: id });
+  }, [id]);
+
   return (
     <RequireAuth>
       <SafeAreaView className="flex-1" edges={["top", "bottom"]} style={{ flex: 1 }}>

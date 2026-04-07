@@ -25,8 +25,10 @@ export function HomeBalanceCard() {
           style={{ flexShrink: 1, minWidth: 0 }}
         />
         <View className="home-balance-renewal">
-          <Text className="home-balance-renewal-label">Next renewal</Text>
-          <Text className="home-balance-date">{renewalLabel}</Text>
+          <View className="home-balance-renewal-glass">
+            <Text className="home-balance-renewal-label">Next renewal</Text>
+            <Text className="home-balance-date">{renewalLabel}</Text>
+          </View>
         </View>
       </View>
     </View>

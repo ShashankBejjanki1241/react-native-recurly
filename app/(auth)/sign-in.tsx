@@ -7,6 +7,7 @@ import { AuthScreenShell } from "@/components/auth/AuthScreenShell";
 import { formatClerkError } from "@/lib/auth/clerk-errors";
 import { pickSignInSecondFactor, type SignInMfaChoice } from "@/lib/auth/pick-sign-in-second-factor";
 import { isValidEmailFormat } from "@/lib/auth/validation";
+import { posthog } from "@/lib/posthog";
 import type { AuthFieldErrors, AuthSignInPhase } from "@/types/auth";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
@@ -62,7 +63,19 @@ export default function SignInScreen() {
   const finalizeSession = useCallback(async () => {
     if (!signIn) return;
     const done = await signIn.finalize({
-      navigate: ({ decorateUrl }) => {
+      navigate: ({ session, decorateUrl }) => {
+        const userId = session?.user?.id;
+        const userEmail = session?.user?.primaryEmailAddress?.emailAddress;
+        if (userId) {
+          posthog.identify(userId, {
+            $set: { email: userEmail ?? null },
+            $set_once: { first_sign_in_date: new Date().toISOString() },
+          });
+        }
+        posthog.capture("user_signed_in", {
+          method: phase,
+          email: userEmail ?? null,
+        });
         const path = decorateUrl("/(tabs)");
         if (Platform.OS === "web" && path.startsWith("http")) {
           window.location.assign(path);
@@ -74,7 +87,7 @@ export default function SignInScreen() {
     if (done.error) {
       setFieldErrors({ form: formatClerkError(done.error) });
     }
-  }, [router, signIn]);
+  }, [phase, router, signIn]);
 
   /** Sends the default second-factor code and moves UI to the MFA step. */
   const beginSecondFactor = useCallback(async () => {

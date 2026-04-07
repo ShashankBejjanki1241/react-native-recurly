@@ -15,10 +15,11 @@ import {
   isValidEmailFormat,
   MIN_SIGN_UP_PASSWORD_LENGTH,
 } from "@/lib/auth/validation";
+import { posthog } from "@/lib/posthog";
 import type { AuthFieldErrors, AuthForgotPasswordStep } from "@/types/auth";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -78,8 +79,29 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
+  const [resendSuccessMessage, setResendSuccessMessage] = useState<string | null>(
+    null,
+  );
+  const resendSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const busy = fetchStatus === "fetching";
+
+  useEffect(() => {
+    setResendSuccessMessage(null);
+    if (resendSuccessTimerRef.current) {
+      clearTimeout(resendSuccessTimerRef.current);
+      resendSuccessTimerRef.current = null;
+    }
+  }, [flowStep]);
+
+  useEffect(
+    () => () => {
+      if (resendSuccessTimerRef.current) {
+        clearTimeout(resendSuccessTimerRef.current);
+      }
+    },
+    [],
+  );
 
   /** Clears one `fieldErrors` key when the user edits that input. */
   const clearField = useCallback((key: keyof AuthFieldErrors) => {
@@ -107,7 +129,14 @@ export default function ForgotPasswordScreen() {
     async (opts?: { passwordJustUpdatedTip?: boolean }) => {
       if (!signIn) return;
       const done = await signIn.finalize({
-        navigate: ({ decorateUrl }) => {
+        navigate: ({ session, decorateUrl }) => {
+          const userId = session?.user?.id;
+          if (userId) {
+            posthog.identify(userId, {
+              $set: { email: session?.user?.primaryEmailAddress?.emailAddress ?? null },
+            });
+          }
+          posthog.capture("password_reset_completed");
           const path = decorateUrl("/(tabs)");
           const go = () => goToSignedInApp(path);
 
@@ -148,6 +177,17 @@ export default function ForgotPasswordScreen() {
     setMfaCode("");
     setFieldErrors({});
   }, [signIn]);
+
+  const showResendSuccess = useCallback((message: string) => {
+    if (resendSuccessTimerRef.current) {
+      clearTimeout(resendSuccessTimerRef.current);
+    }
+    setResendSuccessMessage(message);
+    resendSuccessTimerRef.current = setTimeout(() => {
+      setResendSuccessMessage(null);
+      resendSuccessTimerRef.current = null;
+    }, 4000);
+  }, []);
 
   /** Populates MFA options from Clerk and shows the method chooser (no codes sent yet). */
   const openMfaChooser = useCallback(() => {
@@ -228,6 +268,8 @@ export default function ForgotPasswordScreen() {
       setFieldErrors({ form: formatClerkError(sent.error) });
       return;
     }
+
+    posthog.capture("password_reset_requested", { email: id });
 
     setResetCode("");
     setFieldErrors({});
@@ -345,23 +387,32 @@ export default function ForgotPasswordScreen() {
     if (mfaChoice.kind === "email_code") {
       const sent = await signIn.mfa.sendEmailCode();
       if (sent.error) setFieldErrors({ form: formatClerkError(sent.error) });
-      else setFieldErrors({});
+      else {
+        setFieldErrors({});
+        showResendSuccess("Code sent");
+      }
       return;
     }
     if (mfaChoice.kind === "phone_code") {
       const sent = await signIn.mfa.sendPhoneCode();
       if (sent.error) setFieldErrors({ form: formatClerkError(sent.error) });
-      else setFieldErrors({});
+      else {
+        setFieldErrors({});
+        showResendSuccess("Code sent");
+      }
     }
-  }, [mfaChoice, signIn]);
+  }, [mfaChoice, showResendSuccess, signIn]);
 
   /** Resends the password-reset email code from the verify step. */
   const onResendResetCode = useCallback(async () => {
     if (!signIn) return;
     const sent = await signIn.resetPasswordEmailCode.sendCode();
     if (sent.error) setFieldErrors({ form: formatClerkError(sent.error) });
-    else setFieldErrors({});
-  }, [signIn]);
+    else {
+      setFieldErrors({});
+      showResendSuccess("Code sent");
+    }
+  }, [showResendSuccess, signIn]);
 
   const emailIssue =
     fieldErrors.email ??
@@ -565,6 +616,15 @@ export default function ForgotPasswordScreen() {
                 </Text>
               ) : null}
 
+              {resendSuccessMessage ? (
+                <Text
+                  className="text-center text-sm font-sans-medium text-primary"
+                  accessibilityLiveRegion="polite"
+                >
+                  {resendSuccessMessage}
+                </Text>
+              ) : null}
+
               <Pressable
                 className={
                   verifyCodeDisabled
@@ -675,18 +735,13 @@ export default function ForgotPasswordScreen() {
           </Text>
 
           <Pressable
-            onPress={() => {
-              setFlowStep("new_password");
-              setMfaMethodOptions([]);
-              setPendingMfaOptionKey(null);
-              setFieldErrors({});
-            }}
+            onPress={() => void startOver()}
             className="auth-back-link"
             accessibilityRole="button"
-            accessibilityLabel="Back to new password step"
+            accessibilityLabel="Cancel and start password reset over"
             disabled={busy || pendingMfaOptionKey !== null}
           >
-            <Text className="auth-back-link-text">← Back to new password</Text>
+            <Text className="auth-back-link-text">← Start over</Text>
           </Pressable>
 
           <View className="auth-card">
@@ -787,6 +842,15 @@ export default function ForgotPasswordScreen() {
                   accessibilityRole="alert"
                 >
                   {fieldErrors.form}
+                </Text>
+              ) : null}
+
+              {resendSuccessMessage ? (
+                <Text
+                  className="text-center text-sm font-sans-medium text-primary"
+                  accessibilityLiveRegion="polite"
+                >
+                  {resendSuccessMessage}
                 </Text>
               ) : null}
 

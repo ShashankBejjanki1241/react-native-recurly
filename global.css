@@ -54,11 +54,16 @@
   }
 
   .tabs-pill {
-    @apply size-12 items-center justify-center rounded-full bg-transparent;
+    @apply size-12 items-center justify-center rounded-full;
+  }
+
+  /* Slight frost behind inactive glyphs so they read on the blurred bar. */
+  .tabs-pill-idle {
+    @apply border border-white/14 bg-white/[0.07];
   }
 
   .tabs-active {
-    @apply bg-accent;
+    @apply border-transparent bg-accent;
   }
 
   .tabs-glyph {
@@ -93,7 +98,7 @@
   }
 
   .home-add-hit {
-    @apply shrink-0 items-center justify-center rounded-full active:opacity-70;
+    @apply size-12 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white/45 active:opacity-70;
   }
 
   /* Uniform radius reads intentional; matches rounded cards below. */
@@ -121,8 +126,12 @@
     @apply max-w-[45%] shrink-0 items-end;
   }
 
+  .home-balance-renewal-glass {
+    @apply w-full items-end rounded-2xl border border-white/28 bg-white/[0.14] px-3 py-2.5;
+  }
+
   .home-balance-renewal-label {
-    @apply mb-0.5 text-base font-sans-semibold text-white/80;
+    @apply mb-0.5 text-base font-sans-semibold text-white/85;
   }
 
   .list-head {
@@ -134,16 +143,16 @@
   }
 
   .list-action {
-    @apply min-h-11 min-w-[44px] flex-row items-center justify-center rounded-full border border-black/15 bg-card/60 px-3.5 py-2 active:opacity-60;
+    @apply min-h-11 min-w-[44px] flex-row items-center justify-center rounded-full border border-white/55 bg-white/40 px-3.5 py-2 active:opacity-60;
   }
 
   .list-action-text {
     @apply text-base font-sans-semibold text-primary leading-none;
   }
 
-  /* Same surface language as `.sub-card` (border + soft shadow). */
+  /* Same surface language as `.sub-card`; light translucency reads soft on the cream field. */
   .upcoming-card {
-    @apply mr-4 w-48 shrink-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-sm shadow-black/5;
+    @apply mr-4 w-48 shrink-0 flex-col rounded-2xl border border-white/55 bg-card/85 p-4 shadow-sm shadow-black/[0.06];
   }
 
   .upcoming-row {
@@ -175,12 +184,12 @@
   }
 
   .sub-card {
-    @apply rounded-2xl border border-border bg-card p-4 shadow-sm shadow-black/5;
+    @apply rounded-2xl border border-white/45 bg-card/88 p-4 shadow-sm shadow-black/[0.06];
   }
 
-  /* Expanded row: same `bg-card` as collapsed; ring lifts affordance without a second visual language. */
+  /* Expanded row: same surface as collapsed; ring lifts affordance without a second visual language. */
   .sub-card-expanded {
-    @apply bg-card ring-1 ring-black/10;
+    @apply bg-card/92 ring-1 ring-black/[0.08];
   }
 
   .sub-head {
@@ -308,7 +317,7 @@
   }
 
   .auth-card {
-    @apply mt-8 rounded-3xl border border-border bg-card p-5;
+    @apply mt-8 rounded-3xl border border-white/50 bg-card/92 p-5 shadow-sm shadow-black/[0.05];
   }
 
   .auth-form {
@@ -412,11 +421,11 @@
   }
 
   .modal-overlay {
-    @apply flex-1 bg-black/50;
+    @apply flex-1 bg-black/40;
   }
 
   .modal-container {
-    @apply mt-auto max-h-[85%] rounded-t-3xl bg-background;
+    @apply mt-auto max-h-[85%] rounded-t-3xl border border-white/40 border-b-0 bg-background/95;
   }
 
   .modal-header {

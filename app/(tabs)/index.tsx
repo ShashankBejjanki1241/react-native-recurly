@@ -15,6 +15,7 @@ import {
 } from "@/constants/data";
 import { colors, components } from "@/constants/theme";
 import { mapClerkUserToHomeHeader } from "@/lib/auth/map-clerk-user";
+import { posthog } from "@/lib/posthog";
 import { useAuth, useUser } from "@clerk/expo";
 import { Redirect, router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -151,11 +152,17 @@ export default function HomeTab() {
             <HomeSubscriptionCard
               subscription={item.subscription}
               expanded={expandedId === item.subscription.id}
-              onPress={() =>
+              onPress={() => {
+                const isExpanding = expandedId !== item.subscription.id;
                 setExpandedId((prev) =>
                   prev === item.subscription.id ? null : item.subscription.id,
-                )
-              }
+                );
+                posthog.capture("home_subscription_expanded", {
+                  subscription_id: item.subscription.id,
+                  subscription_name: item.subscription.name,
+                  expanded: isExpanding,
+                });
+              }}
             />
           );
         case "emptySubscriptions":

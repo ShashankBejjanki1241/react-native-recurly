@@ -1,10 +1,11 @@
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { GlassTabBarBackground } from "@/components/ui/GlassTabBarBackground";
 import { tabs } from "@/constants/data";
 import { colors, components, spacing } from "@/constants/theme";
 import { Image } from "expo-image";
 import { Tabs } from "expo-router";
 import type { ImageSourcePropType } from "react-native";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -25,7 +26,9 @@ const TabLayout = () => {
   const TabIcon = ({ focused, icon }: TabIconProps) => (
     <View className="tabs-icon">
       <View
-        className={focused ? "tabs-pill tabs-active" : "tabs-pill"}
+        className={
+          focused ? "tabs-pill tabs-active" : "tabs-pill tabs-pill-idle"
+        }
       >
         <Image
           source={icon}
@@ -55,15 +58,21 @@ const TabLayout = () => {
               flex: 1,
               backgroundColor: colors.background,
             },
+            tabBarBackground: () => <GlassTabBarBackground />,
             tabBarStyle: {
               position: "absolute",
               bottom: Math.max(insets.bottom, tabBar.horizontalInset),
               height: tabBar.height,
               marginHorizontal: tabBar.horizontalInset,
               borderRadius: tabBar.radius,
-              backgroundColor: colors.primary,
+              backgroundColor: "transparent",
               borderTopWidth: 0,
-              elevation: 0,
+              borderWidth: 0,
+              elevation: Platform.OS === "android" ? 14 : 0,
+              shadowColor: "#081126",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: Platform.OS === "ios" ? 0.22 : 0,
+              shadowRadius: 20,
             },
             tabBarItemStyle: {
               paddingVertical: (tabBar.height - tabBar.iconFrame) / 2,

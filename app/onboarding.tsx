@@ -1,6 +1,7 @@
 import "@/global.css";
 
 import { colors } from "@/constants/theme";
+import { posthog } from "@/lib/posthog";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Link } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -108,7 +109,10 @@ export default function OnboardingScreen() {
               accessibilityRole="button"
               accessibilityLabel="Create an account"
               className="rounded-2xl bg-primary px-6 py-4 active:opacity-90"
-              onPressIn={triggerLightHaptic}
+              onPressIn={() => {
+                triggerLightHaptic();
+                posthog.capture("onboarding_create_account_pressed");
+              }}
             >
               <Text className="text-center text-base font-sans-bold text-white">
                 Create account
@@ -120,7 +124,10 @@ export default function OnboardingScreen() {
               accessibilityRole="button"
               accessibilityLabel="Sign in"
               className="rounded-2xl border border-border bg-card px-6 py-4 active:opacity-90"
-              onPressIn={triggerLightHaptic}
+              onPressIn={() => {
+                triggerLightHaptic();
+                posthog.capture("onboarding_sign_in_pressed");
+              }}
             >
               <Text className="text-center text-base font-sans-semibold text-primary">
                 I already have an account

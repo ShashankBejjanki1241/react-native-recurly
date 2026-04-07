@@ -106,7 +106,7 @@ export function AuthLegalFooter(props: AuthLegalFooterProps = {}) {
             onActivate={() => openTerms(props)}
           />
         ) : (
-          "terms"
+          "Terms"
         )}
         {" "}and{" "}
         {privacyInteractive ? (

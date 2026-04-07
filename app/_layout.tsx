@@ -1,4 +1,12 @@
+import { colors } from "@/constants/theme";
 import "@/global.css";
+import {
+  getClerkPublishableKey,
+  isClerkConfigured,
+} from "@/lib/auth/clerk-config";
+import { posthog } from "@/lib/posthog";
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import {
   PlusJakartaSans_300Light,
   PlusJakartaSans_400Regular,
@@ -7,13 +15,15 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { ClerkProvider } from "@clerk/expo";
-import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
-import { getClerkPublishableKey, isClerkConfigured } from "@/lib/auth/clerk-config";
-import { colors } from "@/constants/theme";
-import { useEffect } from "react";
+import {
+  SplashScreen,
+  Stack,
+  useGlobalSearchParams,
+  usePathname,
+} from "expo-router";
+import { PostHogProvider } from "posthog-react-native";
+import { useEffect, useRef } from "react";
 import { Text, View } from "react-native";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -39,6 +49,20 @@ const recurlySansFontMap = {
 /** Root layout: fonts, splash, Clerk provider, and stack navigator. */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(recurlySansFontMap);
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
+
+  // Manual screen tracking for Expo Router
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...params,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname, params]);
 
   useEffect(() => {
     if (!fontsLoaded && fontError == null) return;
@@ -85,8 +109,17 @@ export default function RootLayout() {
   const publishableKey = getClerkPublishableKey();
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
-    </ClerkProvider>
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureScreens: false,
+        captureTouches: true,
+        propsToCapture: ["testID"],
+      }}
+    >
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ClerkProvider>
+    </PostHogProvider>
   );
 }

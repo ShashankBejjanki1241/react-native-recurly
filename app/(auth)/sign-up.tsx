@@ -10,6 +10,7 @@ import {
   isValidEmailFormat,
   MIN_SIGN_UP_PASSWORD_LENGTH,
 } from "@/lib/auth/validation";
+import { posthog } from "@/lib/posthog";
 import type { AuthFieldErrors, AuthSignUpPhase } from "@/types/auth";
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
@@ -50,7 +51,18 @@ export default function SignUpScreen() {
   const finalizeSession = useCallback(async () => {
     if (!signUp) return;
     const done = await signUp.finalize({
-      navigate: ({ decorateUrl }) => {
+      navigate: ({ session, decorateUrl }) => {
+        const userId = session?.user?.id;
+        const userEmail = session?.user?.primaryEmailAddress?.emailAddress;
+        if (userId) {
+          posthog.identify(userId, {
+            $set: { email: userEmail ?? null },
+            $set_once: { first_sign_up_date: new Date().toISOString() },
+          });
+        }
+        posthog.capture("email_verification_completed", {
+          email: userEmail ?? null,
+        });
         const path = decorateUrl("/(tabs)");
         if (Platform.OS === "web" && path.startsWith("http")) {
           window.location.assign(path);
@@ -90,6 +102,8 @@ export default function SignUpScreen() {
       setFieldErrors({ form: formatClerkError(error) });
       return;
     }
+
+    posthog.capture("user_signed_up", { email: trimmedEmail });
 
     if (signUp.status === "complete") {
       await finalizeSession();
